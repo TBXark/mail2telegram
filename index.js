@@ -155,12 +155,11 @@ async function emailHandler(message, env, ctx) {
 
     try {
         const text = `
-From    :${message.from}
-To      :${message.to}
+${message.headers.get("subject")}
 
 -----------
-
-${message.headers.get("subject")}
+From\t:\t${message.from}
+To\t\t:\t${message.to}
 `;
         const preview = `https://${DOMAIN}/email/${id}?mode=text`;
         const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
