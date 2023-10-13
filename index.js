@@ -136,7 +136,8 @@ async function emailHandler(message, env, ctx) {
 
     const matchAddress = (list, address) => {
         for (let i = 0; i < list.length; i++) {
-            if (list[i].test(address)) {
+            const regx = new RegExp(list[i]);
+            if (regx.test(address)) {
                 return true;
             }
         }
