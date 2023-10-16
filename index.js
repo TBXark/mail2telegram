@@ -152,11 +152,11 @@ async function sendMailToTelegram(message, env, ctx) {
   const id = await saveEmailToDB(DB, mail, ttl);
 
   const text = `
-  ${message.headers.get('subject')}
-  
-  -----------
-  From\t:\t${message.from}
-  To\t\t:\t${message.to}
+${message.headers.get('subject')}
+
+-----------
+From\t:\t${message.from}
+To\t\t:\t${message.to}
   `;
   const preview = `https://${DOMAIN}/email/${id}?mode=text`;
   const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
@@ -204,7 +204,7 @@ async function fetchHandler(req, env, ctx) {
     const mode = req.query.mode || 'text';
     const value = await env.DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
     if (value && value[mode]) {
-      return new Response(value, {
+      return new Response(value[mode], {
         headers: {
           'content-type': 'text/html; charset=utf-8',
         },
