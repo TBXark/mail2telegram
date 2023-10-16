@@ -15,6 +15,7 @@
 | FORWARD_LIST | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔 |
 | WHITE_LIST | 发件人白名单，一个正则表达式数组转成字符串 |
 | BLOCK_LIST | 发件人黑名单，一个正则表达式数组转成字符串 |
+| DB | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB` |
 
 
 ### 部署
