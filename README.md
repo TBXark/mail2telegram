@@ -33,9 +33,11 @@ yarn & yarn pub
 
 ### 项目来源
 
-有些时候注册网站需要邮箱地址，但是很多时候不希望使用自己的主要的邮箱地址，这时候就会用一些临时邮箱。但是这些临时邮箱的所有权不在自己手里，一旦需要多次使用某个地址的时候就比较麻烦。当然你也可以利用谷歌邮箱别名获取无限Gmail邮箱。这里我自己的方案是使用 Cloudflare Email Routing获得无限地址的企业邮箱，而且每个邮箱地址不用提前设置，你只要随便填写然后他就会像网页路由一样自动选的合适的处理方式。使用详情可以查看官方博客：https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/
+有些时候注册网站需要邮箱地址，但是很多时候不希望使用自己的主要的邮箱地址，这时候就会用一些临时邮箱。但是这些临时邮箱的所有权不在自己手里，一旦需要多次使用某个地址的时候就比较麻烦。当然你也可以利用谷歌邮箱别名获取无限Gmail邮箱, 但是我不想Gmail收到杂乱无章的邮件所以就没有使用了。
 
-当我们使用了CF的邮箱路由之后，你在注册不同服务商的时候就可以标记来源，比如注册amazon就使用`amazon@example.com`。但是目前Cloudflare Email Router有个缺点就是没有一个收件箱可以查看消息，当然你可以把所有邮件转发到你的另外一个邮箱比如outlook，gmail之类的，然后在他们的网页中查看。但是对于一个临时邮箱来说这一步操作对我来说有一点繁琐。
+这里我自己的方案是使用 Cloudflare Email Routing获得无限地址的企业邮箱，而且每个邮箱地址不用提前设置，你只要随便填写然后他就会像网页路由一样自动选的合适的处理方式。使用详情可以查看官方博客：https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/
+
+当我们使用了Cloudflare Email Routing的邮箱路由之后，你在注册不同服务商的时候就可以标记来源，比如注册amazon就使用`amazon@example.com`。但是目前Cloudflare Email Router有个缺点就是没有一个收件箱可以查看消息，当然你可以把所有邮件转发到你的另外一个邮箱比如outlook，gmail之类的，然后在他们的网页中查看。但是对于一个临时邮箱来说这一步操作对我来说有一点繁琐。
 
 很幸运的是Cloudflare Email Router支持Worker，这样我们可以对每一封邮件执行我们自己的脚本，[`mail2telegram`](https://github.com/TBXark/mail2telegram)就是这样的一个工具，他可以解析邮件并把标题和预览地址发到你的Telegram。
 
