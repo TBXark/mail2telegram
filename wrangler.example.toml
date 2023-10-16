@@ -10,4 +10,4 @@ kv_namespaces = [
 DOMAIN = "mail2telegram.yourname.workers.dev"
 TELEGRAM_ID = ""
 TELEGRAM_TOKEN = ":"
-FORWARD_LIST = "[\"yourname@outlook.com\"]"
+FORWARD_LIST = "yourname@outlook.com"

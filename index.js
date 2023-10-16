@@ -245,10 +245,10 @@ async function emailHandler(message, env, ctx) {
   }
 
   try {
-    const forwardList = JSON.parse(env.FORWARD_LIST || '[]');
+    const forwardList = (env.FORWARD_LIST || '').split(',');
     for (const forward of forwardList) {
       try {
-        await message.forward(forward);
+        await message.forward(forward.trim());
       } catch (e) {
         console.error(e);
       }
