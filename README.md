@@ -41,4 +41,4 @@ yarn & yarn pub
 
 如果你不喜欢使用Telegram你也可以使用我的另外一个项目[testmail-viewer](https://github.com/TBXark/testmail-viewer),申请一个testmail-viewer，然后把所有的邮件转发到你的testmail，这样你就可以使用[testmail-viewer](https://github.com/TBXark/testmail-viewer)快速查看你的邮件。
 
-当然你也可以将两者结合在一起获得更佳琦琰。
+当然你也可以将两者结合在一起获得更佳体验, 你只要在`FORWARD_LIST`添加你的testmail地址即可。
