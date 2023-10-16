@@ -202,8 +202,8 @@ async function fetchHandler(req, env, ctx) {
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
-    const value = await env.DB.get(id);
-    if (value[mode]) {
+    const value = await env.DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
+    if (value && value[mode]) {
       return new Response(value, {
         headers: {
           'content-type': 'text/html; charset=utf-8',
@@ -218,7 +218,11 @@ async function fetchHandler(req, env, ctx) {
   router.all('*', async (req) => {
     return new Response('It works!');
   });
-  return router.handle(req);
+  return router.handle(req).catch((e) => {
+      return new Response(e.message, {
+        status: 500,
+      });
+  });
 }
 
 /**
