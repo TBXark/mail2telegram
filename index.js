@@ -137,8 +137,6 @@ async function emailHandler(message, env, ctx) {
     DB,
   } = env;
 
-  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
-  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
 
   const matchAddress = (raw, address) => {
     if (!raw) {
@@ -170,6 +168,9 @@ async function emailHandler(message, env, ctx) {
   }
 
   try {
+    let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
+    ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
+
     const mail = await parseEmail(message);
     const id = await saveEmailToDB(DB, mail, ttl);
 
