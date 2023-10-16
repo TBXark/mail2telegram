@@ -48,7 +48,7 @@ async function parseEmail(message) {
   const raw = await streamToArrayBuffer(message.raw, message.rawSize);
   const PostalMime = require('postal-mime');
   // eslint-disable-next-line
-  const parser = new PostalMime.default();
+    const parser = new PostalMime.default();
   return await parser.parse(raw);
 }
 
@@ -84,6 +84,110 @@ async function saveEmailToDB(db, email, ttl) {
   return id;
 }
 
+
+/**
+ * Checks if the given message can be handled based on the environment.
+ *
+ * @param {any} message - The message to be checked.
+ * @param {object} env - The environment object containing BLOCK_LIST and WHITE_LIST.
+ * @return {boolean} - Returns true if the message can be handled, false otherwise.
+ */
+function canHandleMessage(message, env) {
+  const {
+    BLOCK_LIST,
+    WHITE_LIST,
+  } = env;
+  const matchAddress = (raw, address) => {
+    if (!raw) {
+      return false;
+    }
+    let list = [];
+    try {
+      list = JSON.parse(raw);
+    } catch (e) {
+      return false;
+    }
+    if (!Array.isArray(list)) {
+      return false;
+    }
+    for (const item of list) {
+      const regex = new RegExp(item);
+      if (regex.test(address)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  if (!matchAddress(WHITE_LIST, message.from)) {
+    if (matchAddress(BLOCK_LIST, message.from)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+/**
+   * Sends an email message to Telegram.
+   *
+   * @param {Message} message - The email message to be sent.
+   * @param {Object} env - The environment variables.
+   * @param {Object} ctx - The context object.
+   * @return {Promise<void>} A promise that resolves when the email message is sent successfully.
+   */
+async function sendMailToTelegram(message, env, ctx) {
+  const {
+    TELEGRAM_TOKEN,
+    TELEGRAM_ID,
+    MAIL_TTL,
+    DOMAIN,
+    DB,
+  } = env;
+
+  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
+  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
+
+  const mail = await parseEmail(message);
+  const id = await saveEmailToDB(DB, mail, ttl);
+
+  const text = `
+  ${message.headers.get('subject')}
+  
+  -----------
+  From\t:\t${message.from}
+  To\t\t:\t${message.to}
+  `;
+  const preview = `https://${DOMAIN}/email/${id}?mode=text`;
+  const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
+
+  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_ID,
+      text: text,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'Text',
+              url: preview,
+            },
+            {
+              text: 'HTML',
+              url: fullHTML,
+            },
+          ],
+        ],
+      },
+    }),
+  });
+}
+
+
 /**
  * Handles the fetch request.
  *
@@ -94,7 +198,7 @@ async function saveEmailToDB(db, email, ttl) {
  */
 async function fetchHandler(req, env, ctx) {
   // eslint-disable-next-line
-  const router = Router();
+    const router = Router();
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
@@ -126,101 +230,30 @@ async function fetchHandler(req, env, ctx) {
  * @return {Promise<void>} - A promise that resolves when the email is processed.
  */
 async function emailHandler(message, env, ctx) {
-  const {
-    BLOCK_LIST,
-    WHITE_LIST,
-    FORWARD_LIST,
-    TELEGRAM_TOKEN,
-    TELEGRAM_ID,
-    MAIL_TTL,
-    DOMAIN,
-    DB,
-  } = env;
-
-
-  const matchAddress = (raw, address) => {
-    if (!raw) {
-      return false;
-    }
-    let list = [];
-    try {
-      list = JSON.parse(raw);
-    } catch (e) {
-      return false;
-    }
-    if (!Array.isArray(list)) {
-      return false;
-    }
-    for (const item of list) {
-      const regex = new RegExp(item);
-      if (regex.test(address)) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  if (!matchAddress(WHITE_LIST, message.from)) {
-    if (matchAddress(BLOCK_LIST, message.from)) {
-      return;
-    }
+  if (!canHandleMessage(message, env)) {
+    return;
   }
 
   try {
-    let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
-    ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
-
-    const mail = await parseEmail(message);
-    const id = await saveEmailToDB(DB, mail, ttl);
-
-    const text = `
-${message.headers.get('subject')}
-
------------
-From\t:\t${message.from}
-To\t\t:\t${message.to}
-`;
-    const preview = `https://${DOMAIN}/email/${id}?mode=text`;
-    const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
-
-    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_ID,
-        text: text,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: 'Text',
-                url: preview,
-              },
-              {
-                text: 'HTML',
-                url: fullHTML,
-              },
-            ],
-          ],
-        },
-      }),
-    });
+    await sendMailToTelegram(message, env, ctx);
   } catch (e) {
     console.error(e);
   }
 
-  const forwardList = JSON.parse(FORWARD_LIST || '[]');
-  for (const forward of forwardList) {
-    try {
-      await message.forward(forward);
-    } catch (e) {
-      console.error(e);
+  try {
+    const forwardList = JSON.parse(env.FORWARD_LIST || '[]');
+    for (const forward of forwardList) {
+      try {
+        await message.forward(forward);
+      } catch (e) {
+        console.error(e);
+      }
     }
+  } catch (e) {
+    console.error(e);
   }
 }
+
 
 export default {
   fetch: fetchHandler,
