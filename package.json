@@ -7,6 +7,7 @@
     "start": "node index.js",
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
+    "build": "esbuild index.js --bundle --outfile=./build/index.js --format=esm",
     "lint": "eslint --fix ."
   },
   "license": "MIT",
