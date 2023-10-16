@@ -68,12 +68,12 @@ async function saveEmailToDB(db, email, ttl) {
   if (email.html) {
     cache.html = email.html;
   }
-  if (email.text) {
+  if (email.text || cache.html) {
     cache.text = `
         <!DOCTYPE html>
         <html>
         <body>
-        <pre>${email.text}</pre>
+        <pre>${email.text || cache.html}</pre>
         </body>
         </html>
         `;
