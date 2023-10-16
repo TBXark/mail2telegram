@@ -1,4 +1,4 @@
-import { Router } from "itty-router";
+import {Router} from 'itty-router';
 
 /**
  * Generates a random ID of the specified length.
@@ -7,13 +7,13 @@ import { Router } from "itty-router";
  * @return {string} - The randomly generated ID.
  */
 function randamId(length) {
-    const elements =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
-        result += elements[Math.floor(Math.random() * elements.length)];
-    }
-    return result;
+  const elements =
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += elements[Math.floor(Math.random() * elements.length)];
+  }
+  return result;
 }
 
 /**
@@ -24,18 +24,18 @@ function randamId(length) {
  * @return {Promise<Uint8Array>} The converted ArrayBuffer.
  */
 async function streamToArrayBuffer(stream, streamSize) {
-    let result = new Uint8Array(streamSize);
-    let bytesRead = 0;
-    const reader = stream.getReader();
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-            break;
-        }
-        result.set(value, bytesRead);
-        bytesRead += value.length;
+  const result = new Uint8Array(streamSize);
+  let bytesRead = 0;
+  const reader = stream.getReader();
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) {
+      break;
     }
-    return result;
+    result.set(value, bytesRead);
+    bytesRead += value.length;
+  }
+  return result;
 }
 
 /**
@@ -45,10 +45,11 @@ async function streamToArrayBuffer(stream, streamSize) {
  * @return {Promise<Object>} - A promise that resolves to the parsed email message.
  */
 async function parseEmail(message) {
-    const raw = await streamToArrayBuffer(message.raw, message.rawSize);
-    const PostalMime = require("postal-mime");
-    const parser = new PostalMime.default();
-    return await parser.parse(raw);
+  const raw = await streamToArrayBuffer(message.raw, message.rawSize);
+  const PostalMime = require('postal-mime');
+  // eslint-disable-next-line
+  const parser = new PostalMime.default();
+  return await parser.parse(raw);
 }
 
 /**
@@ -58,15 +59,17 @@ async function parseEmail(message) {
  * @param {Object} email - The email object.
  * @param {string} email.html - The HTML content of the email.
  * @param {string} email.text - The plain text content of the email.
+ * @param {number} ttl - The time-to-live of the email.
  * @return {Promise<string>} - A promise that resolves to the ID of the saved email.
  */
-async function saveEmailToDB(db, email) {
-    const id = randamId(32);
-    if (email.html) {
-        await db.put(`${id}-html`, email.html, { expirationTtl: 60 * 60 * 24 });
-    }
-    if (email.text) {
-        const html = `
+async function saveEmailToDB(db, email, ttl) {
+  const id = randamId(32);
+  const cache = {};
+  if (email.html) {
+    cache.html = email.html;
+  }
+  if (email.text) {
+    cache.text = `
         <!DOCTYPE html>
         <html>
         <body>
@@ -74,9 +77,11 @@ async function saveEmailToDB(db, email) {
         </body>
         </html>
         `;
-        await db.put(`${id}-text`, html, { expirationTtl: 60 * 60 * 24 });
-    }
-    return id;
+  }
+  if (cache.html || cache.text) {
+    await db.put(id, JSON.stringify(cache), {expirationTtl: ttl});
+  }
+  return id;
 }
 
 /**
@@ -88,27 +93,28 @@ async function saveEmailToDB(db, email) {
  * @return {Promise<Response>} The fetch response.
  */
 async function fetchHandler(req, env, ctx) {
-    const router = Router();
-    router.get("/email/:id", async (req) => {
-        const id = req.params.id;
-        const mode = req.query.mode;
-        const value = await env.DB.get(`${id}-${mode}`);
-        if (value) {
-            return new Response(value, {
-                headers: {
-                    "content-type": "text/html; charset=utf-8",
-                },
-            });
-        } else {
-            return new Response("Not found", {
-                status: 404,
-            });
-        }
-    });
-    router.all("*", async (req) => {
-        return new Response("It works!");
-    });
-    return router.handle(req);
+  // eslint-disable-next-line
+  const router = Router();
+  router.get('/email/:id', async (req) => {
+    const id = req.params.id;
+    const mode = req.query.mode || 'text';
+    const value = await env.DB.get(id);
+    if (value[mode]) {
+      return new Response(value, {
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+        },
+      });
+    } else {
+      return new Response('Not found', {
+        status: 404,
+      });
+    }
+  });
+  router.all('*', async (req) => {
+    return new Response('It works!');
+  });
+  return router.handle(req);
 }
 
 /**
@@ -120,88 +126,102 @@ async function fetchHandler(req, env, ctx) {
  * @return {Promise<void>} - A promise that resolves when the email is processed.
  */
 async function emailHandler(message, env, ctx) {
-    const {
-        BLOCK_LIST,
-        WHITE_LIST,
-        FORWARD_LIST,
-        TELEGRAM_TOKEN,
-        TELEGRAM_ID,
-        DOMAIN,
-        DB,
-    } = env;
+  const {
+    BLOCK_LIST,
+    WHITE_LIST,
+    FORWARD_LIST,
+    TELEGRAM_TOKEN,
+    TELEGRAM_ID,
+    MAIL_TTL,
+    DOMAIN,
+    DB,
+  } = env;
 
-    const blockList = JSON.parse(BLOCK_LIST || "[]");
-    const whiteList = JSON.parse(WHITE_LIST || "[]");
-    const forwardList = JSON.parse(FORWARD_LIST || "[]");
+  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
+  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
 
-    const matchAddress = (list, address) => {
-        for (let i = 0; i < list.length; i++) {
-            const regx = new RegExp(list[i]);
-            if (regx.test(address)) {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    if (!matchAddress(whiteList, message.from)) {
-        if (matchAddress(blockList, message.from)) {
-            return;
-        }
+  const matchAddress = (raw, address) => {
+    if (!raw) {
+      return false;
+    }
+    let list = [];
+    try {
+      list = JSON.parse(raw);
+    } catch (e) {
+      return false;
+    }
+    if (!Array.isArray(list)) {
+      return false;
+    }
+    for (const item of list) {
+      const regex = new RegExp(item);
+      if (regex.test(address)) {
+        return true;
+      }
     }
 
-    const mail = await parseEmail(message);
-    const id = await saveEmailToDB(DB, mail);
+    return false;
+  };
 
-    try {
-        const text = `
-${message.headers.get("subject")}
+  if (!matchAddress(WHITE_LIST, message.from)) {
+    if (matchAddress(BLOCK_LIST, message.from)) {
+      return;
+    }
+  }
+
+  try {
+    const mail = await parseEmail(message);
+    const id = await saveEmailToDB(DB, mail, ttl);
+
+    const text = `
+${message.headers.get('subject')}
 
 -----------
 From\t:\t${message.from}
 To\t\t:\t${message.to}
 `;
-        const preview = `https://${DOMAIN}/email/${id}?mode=text`;
-        const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
+    const preview = `https://${DOMAIN}/email/${id}?mode=text`;
+    const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
 
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_ID,
-                text: text,
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: "Text",
-                                url: preview,
-                            },
-                            {
-                                text: "HTML",
-                                url: fullHTML,
-                            },
-                        ],
-                    ],
-                },
-            }),
-        });
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_ID,
+        text: text,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Text',
+                url: preview,
+              },
+              {
+                text: 'HTML',
+                url: fullHTML,
+              },
+            ],
+          ],
+        },
+      }),
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  const forwardList = JSON.parse(FORWARD_LIST || '[]');
+  for (const forward of forwardList) {
+    try {
+      await message.forward(forward);
     } catch (e) {
-        console.error(e);
+      console.error(e);
     }
-
-    for (const forward of forwardList) {
-        try {
-            await message.forward(forward);
-        } catch (e) {
-            console.error(e);
-        }
-    }
+  }
 }
 
 export default {
-    fetch: fetchHandler,
-    email: emailHandler,
+  fetch: fetchHandler,
+  email: emailHandler,
 };
