@@ -68,15 +68,27 @@ async function saveEmailToDB(db, email, ttl) {
   if (email.html) {
     cache.html = email.html;
   }
-  if (email.text || cache.html) {
+  if (email.text) {
     cache.text = `
         <!DOCTYPE html>
         <html>
         <body>
-        <pre>${email.text || cache.html}</pre>
+        <pre>${email.text}</pre>
         </body>
         </html>
         `;
+  } else if (email.html) {
+    cache.text = `
+        <!DOCTYPE html>
+        <html>
+        <body>
+        Text mail is empty,  You can visit <a id="link"> html page </a> to see it
+        </body>
+        <script>
+          document.getElementById("link").href = window.location.href.replace('?mode=text', '?mode=html');
+        </script>
+        </html>
+    `;
   }
   if (cache.html || cache.text) {
     await db.put(id, JSON.stringify(cache), {expirationTtl: ttl});
