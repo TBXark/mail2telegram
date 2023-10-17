@@ -199,7 +199,7 @@ async function fetchHandler(req, env, ctx) {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
     const value = await env.DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
-    if (value && value[mode]) {
+    if (value?.[mode]) {
       const headers = {};
       switch (mode) {
         case 'html':
@@ -218,7 +218,7 @@ async function fetchHandler(req, env, ctx) {
       });
     }
   });
-  router.all('*', async (req) => {
+  router.all('*', async () => {
     return new Response('It works!');
   });
   return router.handle(req).catch((e) => {
