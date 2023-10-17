@@ -1,4 +1,5 @@
 import {Router} from 'itty-router';
+import {convert} from 'html-to-text';
 
 /**
  * Generates a random ID of the specified length.
@@ -69,26 +70,9 @@ async function saveEmailToDB(db, email, ttl) {
     cache.html = email.html;
   }
   if (email.text) {
-    cache.text = `
-        <!DOCTYPE html>
-        <html>
-        <body>
-        <pre>${email.text}</pre>
-        </body>
-        </html>
-        `;
+    cache.text = email.text;
   } else if (email.html) {
-    cache.text = `
-        <!DOCTYPE html>
-        <html>
-        <body>
-        Text mail is empty,  You can visit <a id="link"> html page </a> to see it
-        </body>
-        <script>
-          document.getElementById("link").href = window.location.href.replace('?mode=text', '?mode=html');
-        </script>
-        </html>
-    `;
+    cache.text = convert(html, {});
   }
   if (cache.html || cache.text) {
     await db.put(id, JSON.stringify(cache), {expirationTtl: ttl});
@@ -216,10 +200,15 @@ async function fetchHandler(req, env, ctx) {
     const mode = req.query.mode || 'text';
     const value = await env.DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
     if (value && value[mode]) {
+      const headers = {};
+      switch (mode) {
+        case 'html':
+          headers['content-type'] = 'text/html; charset=utf-8';
+        default:
+          headers['content-type'] = 'text/plain; charset=utf-8';
+      }
       return new Response(value[mode], {
-        headers: {
-          'content-type': 'text/html; charset=utf-8',
-        },
+        headers,
       });
     } else {
       return new Response('Not found', {
@@ -231,9 +220,9 @@ async function fetchHandler(req, env, ctx) {
     return new Response('It works!');
   });
   return router.handle(req).catch((e) => {
-      return new Response(e.message, {
-        status: 500,
-      });
+    return new Response(e.message, {
+      status: 500,
+    });
   });
 }
 

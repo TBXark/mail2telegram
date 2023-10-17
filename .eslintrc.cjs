@@ -15,7 +15,7 @@ module.exports = {
     },
     'ignorePatterns': [
         'node_modules/',
-        'dist/',
+        'build/',
         '**/*.d.ts',
     ],
   };
