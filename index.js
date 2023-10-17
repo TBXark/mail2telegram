@@ -9,7 +9,7 @@ import {convert} from 'html-to-text';
  */
 function randamId(length) {
   const elements =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += elements[Math.floor(Math.random() * elements.length)];
@@ -49,7 +49,7 @@ async function parseEmail(message) {
   const raw = await streamToArrayBuffer(message.raw, message.rawSize);
   const PostalMime = require('postal-mime');
   // eslint-disable-next-line
-    const parser = new PostalMime.default();
+  const parser = new PostalMime.default();
   return await parser.parse(raw);
 }
 
@@ -194,7 +194,7 @@ To\t\t:\t${message.to}
  */
 async function fetchHandler(req, env, ctx) {
   // eslint-disable-next-line
-    const router = Router();
+  const router = Router();
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
