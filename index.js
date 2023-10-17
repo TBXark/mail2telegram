@@ -204,8 +204,10 @@ async function fetchHandler(req, env, ctx) {
       switch (mode) {
         case 'html':
           headers['content-type'] = 'text/html; charset=utf-8';
+          break;
         default:
           headers['content-type'] = 'text/plain; charset=utf-8';
+          break;
       }
       return new Response(value[mode], {
         headers,
