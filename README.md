@@ -31,6 +31,8 @@ cp wrangler.example.toml wrangler.toml
 yarn & yarn pub
 
 ```
+> PS: 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](./build/index.js)
+
 
 ### 使用说明
 

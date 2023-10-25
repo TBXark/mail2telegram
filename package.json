@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
+  "author": "TBXark",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TBXark/mail2telegram"
+  },
+  "homepage": "https://github.com/TBXark/mail2telegram",
+  "description": "Forward email to telegram",
   "scripts": {
     "start": "node index.js",
     "dev": "wrangler dev",
@@ -20,5 +27,11 @@
     "eslint": ">=5.16.0",
     "eslint-config-google": "^0.14.0",
     "wrangler": "^3.0.0"
+  },
+  "files": [
+    "index.js"
+  ],
+  "exports": {
+    "import": "./index.js"
   }
 }
