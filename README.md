@@ -13,7 +13,7 @@
 | TELEGRAM_TOKEN | Telegram Bot Token |
 | DOMAIN  |   Workers的域名  |
 | FORWARD_LIST | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔 |
-| WHITE_LIST | 发件人白名单，一个正则表达式数组转成字符串 |
+| WHITE_LIST | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]` |
 | BLOCK_LIST | 发件人黑名单，一个正则表达式数组转成字符串 |
 | MAIL_TTL | 邮件缓存保存时间，单位秒, 默认为一天 |
 | DB | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB` |
@@ -34,6 +34,8 @@ yarn & yarn pub
 > PS: 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](./build/index.js)
 
 > PS: 使用复制粘贴部署需要手动在项目配置页面设置环境变量
+
+> PS: 需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 
 ### 使用说明
