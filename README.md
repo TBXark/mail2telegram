@@ -45,7 +45,7 @@ yarn & yarn pub
 
 当我们使用了Cloudflare Email Routing的邮箱路由之后，你在注册不同服务商的时候就可以标记来源，比如注册amazon就使用`amazon@example.com`。但是目前Cloudflare Email Router有个缺点就是没有一个收件箱可以查看消息，当然你可以把所有邮件转发到你的另外一个邮箱比如outlook，gmail之类的，然后在他们的网页中查看。但是对于一个临时邮箱来说这一步操作对我来说有一点繁琐。
 
-很幸运的是Cloudflare Email Router支持Worker，这样我们可以对每一封邮件执行我们自己的脚本，[`mail2telegram`](https://github.com/TBXark/mail2telegram)就是这样的一个工具，他可以解析邮件并把标题和预览地址发到你的Telegram。
+很幸运的是Cloudflare Email Router支持Worker，这样我们可以对每一封邮件执行我们自己的脚本，[`mail2telegram`](https://github.com/TBXark/mail2telegram)就是这样的一个工具，他可以解析邮件并把标题和预览地址发到你的Telegram。这里需要你把 `Catch-all address` 的 action 改成 `Send to a Worker:mail2telegram`。 把所有剩余的邮件都转发到我这个worker。如果你需要备份邮件，你只需要在`FORWARD_LIST`填入你的备份邮箱即可。
 
 如果你不喜欢使用Telegram你也可以使用我的另外一个项目[testmail-viewer](https://github.com/TBXark/testmail-viewer),申请一个[testmail](https://testmail.app)，然后把所有的邮件转发到你的testmail，这样你就可以使用[testmail-viewer](https://github.com/TBXark/testmail-viewer)快速查看你的邮件。
 
