@@ -38,6 +38,14 @@ yarn & yarn pub
 > PS: 需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 
+### 安装流程
+
+1. 按照官方教程配置[Cloudflare Email Routing](https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/)
+2. 创建[Clodflare Workers](https://developers.cloudflare.com/workers/), 并根据配置设置环境变量
+3. 配置路由 在`Email Routing - Routing Rules` 中 `Catch-all address` 的 action 改成 `Send to a Worker:mail2telegram`。 把所有剩余的邮件都转发到我这个worker。
+4. 如果你需要备份邮件，你只需要在`FORWARD_LIST`填入你的备份邮箱即可。
+
+
 ### 使用说明
 
 当邮件转发通知到Telegram的时候只有标题，发件人，收件人还有两个按钮。其中`TEXT`可以看到纯文本的邮件，`HTML`可以看到富文本的邮件，但是他其中可能包含某些脚本或者其他追踪链接。建议只有当你有需要的时候或者确认来源没有问题的时候才使用富文本模式。为了安全起见，当超过`MAIL_TTL`邮件缓存保存时间，按钮跳转的链接无法打开。你可以自行修改环境变量调整过期时间。
