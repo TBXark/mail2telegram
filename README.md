@@ -1,6 +1,6 @@
 # mail2telegram
 
-这是一个cloudflare email workers,能够将邮件转换成telegram消息。
+这是一个基于 Cloudflare Email Routing 的 worker，能够将邮件转换成telegram消息。然后你就会得到一个无限地址的临时邮箱Bot。
 
 ![](example.png)
 
