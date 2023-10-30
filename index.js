@@ -204,6 +204,7 @@ To\t\t:\t${message.to}
  * Handles the incoming Telegram webhook request.
  *
  * @param {object} req - The fetch request object.
+ * @param {string} req.params.token - The Telegram bot token.
  * @param {object} env - The environment object.
  * @param {object} ctx - The context object.
  * @return {Promise<void>} The fetch response.
@@ -217,20 +218,23 @@ async function telegramWebhookHandler(req, env, ctx) {
     return;
   }
   const body = await req.json();
+
   const data = body?.callback_query?.data || '';
+  const chatId = body?.callback_query?.message?.chat?.id;
+  const messageId = body?.callback_query?.message?.message_id;
   if (data.startsWith('p:')) {
     const id = data.substring(2);
     const value = await DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
     if (value?.text) {
       await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-        chat_id: body.callback_query.message.chat.id,
+        chat_id: chatId,
         text: value.text.substring(0, 4096),
         disable_web_page_preview: true,
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: 'Read',
+                text: 'Close',
                 callback_data: `d:`,
               },
             ],
@@ -242,11 +246,12 @@ async function telegramWebhookHandler(req, env, ctx) {
   }
   if (data === 'd:') {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'deleteMessage', {
-      chat_id: body.callback_query.message.chat.id,
-      message_id: body.callback_query.message.message_id,
+      chat_id: chatId,
+      message_id: messageId,
     });
     return;
   }
+  console.log(`Unknown data: ${data}`);
 }
 
 /**
@@ -263,6 +268,7 @@ async function fetchHandler(request, env, ctx) {
   const {
     TELEGRAM_TOKEN,
     DOMAIN,
+    DB,
   } = env;
 
   router.get('/init', async (req) => {
@@ -283,7 +289,7 @@ async function fetchHandler(request, env, ctx) {
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
-    const value = await env.DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
+    const value = await DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
     if (value?.[mode]) {
       const headers = {};
       switch (mode) {
@@ -333,9 +339,12 @@ async function emailHandler(message, env, ctx) {
   } catch (e) {
     console.error(e);
   }
+  const {
+    FORWARD_LIST,
+  } = env;
 
   try {
-    const forwardList = (env.FORWARD_LIST || '').split(',');
+    const forwardList = (FORWARD_LIST || '').split(',');
     for (const forward of forwardList) {
       try {
         await message.forward(forward.trim());

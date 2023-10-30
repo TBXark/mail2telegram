@@ -5838,12 +5838,14 @@ async function telegramWebhookHandler(req, env, ctx) {
   }
   const body = await req.json();
   const data = body?.callback_query?.data || "";
+  const chatId = body?.callback_query?.message?.chat?.id;
+  const messageId = body?.callback_query?.message?.message_id;
   if (data.startsWith("p:")) {
     const id = data.substring(2);
     const value = await DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
     if (value?.text) {
       await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
-        chat_id: body.callback_query.message.chat.id,
+        chat_id: chatId,
         text: value.text.substring(0, 4096),
         disable_web_page_preview: true,
         reply_markup: {
@@ -5857,33 +5859,42 @@ async function telegramWebhookHandler(req, env, ctx) {
           ]
         }
       });
+      return;
     }
-  } else if (data === "d:") {
-    await sendTelegramRequest(TELEGRAM_TOKEN, "deleteMessage", {
-      chat_id: body.callback_query.message.chat.id,
-      message_id: body.callback_query.message.message_id
-    });
   }
+  if (data === "d:") {
+    await sendTelegramRequest(TELEGRAM_TOKEN, "deleteMessage", {
+      chat_id: chatId,
+      message_id: messageId
+    });
+    return;
+  }
+  console.log(`Unknown data: ${data}`);
 }
-async function fetchHandler(req, env, ctx) {
+async function fetchHandler(request, env, ctx) {
   const router = e();
   const {
     TELEGRAM_TOKEN,
-    DOMAIN
+    DOMAIN,
+    DB
   } = env;
-  router.get("/init", async (req2) => {
+  router.get("/init", async (req) => {
     return sendTelegramRequest(TELEGRAM_TOKEN, "setWebhook", {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`
     });
   });
-  router.post("/telegram/:token/webhook", async (req2) => {
-    await telegramWebhookHandler(req2, env, ctx);
+  router.post("/telegram/:token/webhook", async (req) => {
+    try {
+      await telegramWebhookHandler(req, env, ctx);
+    } catch (e3) {
+      console.error(e3);
+    }
     return new Response("OK");
   });
-  router.get("/email/:id", async (req2) => {
-    const id = req2.params.id;
-    const mode = req2.query.mode || "text";
-    const value = await env.DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
+  router.get("/email/:id", async (req) => {
+    const id = req.params.id;
+    const mode = req.query.mode || "text";
+    const value = await DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
     if (value?.[mode]) {
       const headers = {};
       switch (mode) {
@@ -5906,7 +5917,7 @@ async function fetchHandler(req, env, ctx) {
   router.all("*", async () => {
     return new Response("It works!");
   });
-  return router.handle(req).catch((e3) => {
+  return router.handle(request).catch((e3) => {
     return new Response(e3.message, {
       status: 500
     });
@@ -5921,8 +5932,11 @@ async function emailHandler(message, env, ctx) {
   } catch (e3) {
     console.error(e3);
   }
+  const {
+    FORWARD_LIST
+  } = env;
   try {
-    const forwardList = (env.FORWARD_LIST || "").split(",");
+    const forwardList = (FORWARD_LIST || "").split(",");
     for (const forward of forwardList) {
       try {
         await message.forward(forward.trim());
