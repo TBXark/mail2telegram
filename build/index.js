@@ -5774,6 +5774,15 @@ function canHandleMessage(message, env) {
   }
   return true;
 }
+async function sendTelegramRequest(token2, method, body) {
+  return await fetch(`https://api.telegram.org/bot${token2}/${method}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+}
 async function sendMailToTelegram(message, env, ctx) {
   const {
     TELEGRAM_TOKEN,
@@ -5795,33 +5804,82 @@ To		:	${message.to}
   `;
   const preview = `https://${DOMAIN}/email/${id}?mode=text`;
   const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_ID,
-      text,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "Text",
-              url: preview
-            },
-            {
-              text: "HTML",
-              url: fullHTML
-            }
-          ]
+  await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
+    chat_id: TELEGRAM_ID,
+    text,
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "Preview",
+            callback_data: `p:${id}`
+          },
+          {
+            text: "Text",
+            url: preview
+          },
+          {
+            text: "HTML",
+            url: fullHTML
+          }
         ]
-      }
-    })
+      ]
+    }
   });
+}
+async function telegramWebhookHandler(req, env, ctx) {
+  const {
+    TELEGRAM_TOKEN,
+    DB
+  } = env;
+  if (req.params.token !== TELEGRAM_TOKEN) {
+    return;
+  }
+  const body = await req.json();
+  const data = body?.callback_query?.data || "";
+  if (data.startsWith("p:")) {
+    const id = data.substring(2);
+    const value = await DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
+    if (value?.text) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
+        chat_id: body.callback_query.message.chat.id,
+        text: value.text.substring(0, 4096),
+        disable_web_page_preview: true,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Read",
+                callback_data: `d:`
+              }
+            ]
+          ]
+        }
+      });
+    }
+  } else if (data === "d:") {
+    await sendTelegramRequest(TELEGRAM_TOKEN, "deleteMessage", {
+      chat_id: body.callback_query.message.chat.id,
+      message_id: body.callback_query.message.message_id
+    });
+  }
 }
 async function fetchHandler(req, env, ctx) {
   const router = e();
+  const {
+    TELEGRAM_TOKEN,
+    DOMAIN
+  } = env;
+  router.get("/init", async (req2) => {
+    return sendTelegramRequest(TELEGRAM_TOKEN, "setWebhook", {
+      url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`
+    });
+  });
+  router.post("/telegram/:token/webhook", async (req2) => {
+    await telegramWebhookHandler(req2, env, ctx);
+    return new Response("OK");
+  });
   router.get("/email/:id", async (req2) => {
     const id = req2.params.id;
     const mode = req2.query.mode || "text";

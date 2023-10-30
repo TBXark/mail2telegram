@@ -42,7 +42,7 @@ async function streamToArrayBuffer(stream, streamSize) {
 /**
  * Parse an email message.
  *
- * @param {Object} message - The email message to be parsed.
+ * @param {object} message - The email message to be parsed.
  * @return {Promise<Object>} - A promise that resolves to the parsed email message.
  */
 async function parseEmail(message) {
@@ -56,8 +56,8 @@ async function parseEmail(message) {
 /**
  * Saves an email to the database.
  *
- * @param {Object} db - The database object.
- * @param {Object} email - The email object.
+ * @param {object} db - The database object.
+ * @param {object} email - The email object.
  * @param {string} email.html - The HTML content of the email.
  * @param {string} email.text - The plain text content of the email.
  * @param {number} ttl - The time-to-live of the email.
@@ -123,13 +123,31 @@ function canHandleMessage(message, env) {
   return true;
 }
 
+/**
+ * Sends a Telegram API request.
+ *
+ * @param {string} token - The Telegram bot token.
+ * @param {string} method - The API method to call.
+ * @param {object} body - The JSON body of the request.
+ * @return {Promise<Response>} A promise that resolves to the response from the API.
+ */
+async function sendTelegramRequest(token, method, body) {
+  return await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
 
 /**
    * Sends an email message to Telegram.
    *
-   * @param {Message} message - The email message to be sent.
-   * @param {Object} env - The environment variables.
-   * @param {Object} ctx - The context object.
+   * @param {object} message - The email message to be sent.
+   * @param {object} env - The environment variables.
+   * @param {object} ctx - The context object.
    * @return {Promise<void>} A promise that resolves when the email message is sent successfully.
    */
 async function sendMailToTelegram(message, env, ctx) {
@@ -157,44 +175,111 @@ To\t\t:\t${message.to}
   const preview = `https://${DOMAIN}/email/${id}?mode=text`;
   const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
 
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      chat_id: TELEGRAM_ID,
-      text: text,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: 'Text',
-              url: preview,
-            },
-            {
-              text: 'HTML',
-              url: fullHTML,
-            },
-          ],
+  await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+    chat_id: TELEGRAM_ID,
+    text: text,
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: 'Preview',
+            callback_data: `p:${id}`,
+          },
+          {
+            text: 'Text',
+            url: preview,
+          },
+          {
+            text: 'HTML',
+            url: fullHTML,
+          },
         ],
-      },
-    }),
+      ],
+    },
   });
 }
 
+/**
+ * Handles the incoming Telegram webhook request.
+ *
+ * @param {object} req - The fetch request object.
+ * @param {object} env - The environment object.
+ * @param {object} ctx - The context object.
+ * @return {Promise<void>} The fetch response.
+ */
+async function telegramWebhookHandler(req, env, ctx) {
+  const {
+    TELEGRAM_TOKEN,
+    DB,
+  } = env;
+  if (req.params.token !== TELEGRAM_TOKEN) {
+    return;
+  }
+  const body = await req.json();
+  const data = body?.callback_query?.data || '';
+  if (data.startsWith('p:')) {
+    const id = data.substring(2);
+    const value = await DB.get(id).then((value) => JSON.parse(value)).catch(() => null);
+    if (value?.text) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: body.callback_query.message.chat.id,
+        text: value.text.substring(0, 4096),
+        disable_web_page_preview: true,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Read',
+                callback_data: `d:`,
+              },
+            ],
+          ],
+        },
+      });
+      return;
+    }
+  }
+  if (data === 'd:') {
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'deleteMessage', {
+      chat_id: body.callback_query.message.chat.id,
+      message_id: body.callback_query.message.message_id,
+    });
+    return;
+  }
+}
 
 /**
  * Handles the fetch request.
  *
- * @param {Request} req - The fetch request object.
- * @param {Environment} env - The environment object.
- * @param {Context} ctx - The context object.
+ * @param {Request} request - The fetch request object.
+ * @param {object} env - The environment object.
+ * @param {object} ctx - The context object.
  * @return {Promise<Response>} The fetch response.
  */
-async function fetchHandler(req, env, ctx) {
+async function fetchHandler(request, env, ctx) {
   // eslint-disable-next-line
   const router = Router();
+  const {
+    TELEGRAM_TOKEN,
+    DOMAIN,
+  } = env;
+
+  router.get('/init', async (req) => {
+    return sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
+      url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
+    });
+  });
+
+  router.post('/telegram/:token/webhook', async (req) => {
+    try {
+      await telegramWebhookHandler(req, env, ctx);
+    } catch (e) {
+      console.error(e);
+    }
+    return new Response('OK');
+  });
+
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
@@ -218,10 +303,12 @@ async function fetchHandler(req, env, ctx) {
       });
     }
   });
+
   router.all('*', async () => {
     return new Response('It works!');
   });
-  return router.handle(req).catch((e) => {
+
+  return router.handle(request).catch((e) => {
     return new Response(e.message, {
       status: 500,
     });
