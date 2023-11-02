@@ -13,7 +13,10 @@ mail2telegram
 
 这是一个基于 Cloudflare Email Routing Worker的 Telegram Bot，能够将邮件转换成telegram消息。你可以将任意前缀的收件人的邮件转发到Bot，然后一个无限地址的临时邮箱Bot就诞生了。
 
-![](example.png)
+<details>
+<summary>点击查看Demo</summary>
+<img style="max-width: 600px;" alt="image" src="example.png">
+</details>
 
 
 

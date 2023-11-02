@@ -13,7 +13,10 @@ mail2telegram
 
 This is a Telegram Bot based on Cloudflare Email Routing Worker, which can convert emails into Telegram messages. You can forward emails from recipients with any prefix to the Bot, and then a temporary mailbox Bot with an infinite address will be created.
 
-![](example.png)
+<details>
+<summary>Click to view the demo.</summary>
+<img style="max-width: 600px;" alt="image" src="example.png">
+</details>
 
 
 
@@ -23,9 +26,15 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 #### 1.1 Deploy via Command Line
 
-- `git clone git@github.com:TBXark/mail2telegram.git`
-- Copy the configuration template and modify it with your own Telegram configuration: `cp wrangler.example.toml wrangler.toml`
-- Deploy: `yarn & yarn pub`
+- Clone the repository:
+
+    `git clone git@github.com:TBXark/mail2telegram.git`
+- Copy the configuration template and modify it with your own Telegram configuration: 
+
+    `cp wrangler.example.toml wrangler.toml`
+- Deploy 
+
+    `yarn & yarn pub`
 
 #### 1.2 Deploy via Copy and Paste
 
