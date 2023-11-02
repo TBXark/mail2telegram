@@ -4,7 +4,7 @@ mail2telegram
 </h1>
 
 <p align="center">
-    <br> English | <a href="README_CN.md">中文</a>
+    <br> <a href="README.md">English</a> | 中文
 </p>
 <p align="center">
     <em>使用Telegram机器人获取您的临时电子邮件..</em>
