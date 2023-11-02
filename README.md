@@ -20,7 +20,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 
 
-## Installation Process
+## Installation
 
 ### 1. Deploy Workers
 
@@ -51,7 +51,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 
 
-### Configuration
+## Configuration
 
 | KEY | Description |
 | ---- | ---- |
@@ -66,7 +66,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 
 
-### Special Note
+## Usage
 
 When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and three buttons are included.
 
