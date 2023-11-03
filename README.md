@@ -64,6 +64,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 | MAIL_TTL | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up.|
 | DB | Bind `KV Namespace Bindings` database to worker with the name `DB`.
 
+> `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
 
 
 ## Usage

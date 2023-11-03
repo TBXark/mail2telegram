@@ -114,10 +114,19 @@ function canHandleMessage(message, env) {
     }
     return false;
   };
-
-  if (!matchAddress(WHITE_LIST, message.from)) {
-    if (matchAddress(BLOCK_LIST, message.from)) {
-      return false;
+  
+  const address = []
+  if (message.from) {
+    address.push(message.from);
+  }
+  if (message.to) {
+    address.push(message.to);
+  }
+  for (const addr of address) {
+    if (!matchAddress(WHITE_LIST, message.from)) {
+      if (matchAddress(BLOCK_LIST, message.from)) {
+        return false;
+      }
     }
   }
   return true;

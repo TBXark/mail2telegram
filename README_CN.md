@@ -26,9 +26,15 @@ mail2telegram
 
 #### 1.1 使用命令行部署
 
-- `git clone git@github.com:TBXark/mail2telegram.git`
-- 复制配置模板，修改成自己的telegram配置 `cp wrangler.example.toml wrangler.toml` 
-- 部署 `yarn & yarn pub`
+- 克隆项目
+
+    `git clone git@github.com:TBXark/mail2telegram.git`
+- 复制配置模板，修改成自己的telegram配置 
+
+    `cp wrangler.example.toml wrangler.toml` 
+- 部署 
+
+    `yarn & yarn pub`
 
 #### 1.2 使用复制粘贴部署
 
@@ -58,6 +64,7 @@ mail2telegram
 | MAIL_TTL | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份 |
 | DB | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB` |
 
+> `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
 
 
 ## 特别说明
