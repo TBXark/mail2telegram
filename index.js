@@ -1,5 +1,6 @@
 import {Router} from 'itty-router';
 import {convert} from 'html-to-text';
+import './types.js';
 
 /**
  * Generates a random ID of the specified length.
@@ -7,7 +8,7 @@ import {convert} from 'html-to-text';
  * @param {number} length - The length of the random ID to generate.
  * @return {string} - The randomly generated ID.
  */
-function randamId(length) {
+function randomId(length) {
   const elements =
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -42,30 +43,23 @@ async function streamToArrayBuffer(stream, streamSize) {
 /**
  * Parse an email message.
  *
- * @param {object} message - The email message to be parsed.
- * @return {Promise<Object>} - A promise that resolves to the parsed email message.
+ * @param {EmailMessage} message - The email message to be parsed.
+ * @return {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
  */
 async function parseEmail(message) {
   const raw = await streamToArrayBuffer(message.raw, message.rawSize);
   const PostalMime = require('postal-mime');
   // eslint-disable-next-line
   const parser = new PostalMime.default();
-  return await parser.parse(raw);
-}
-
-/**
- * Saves an email to the database.
- *
- * @param {object} db - The database object.
- * @param {object} email - The email object.
- * @param {string} email.html - The HTML content of the email.
- * @param {string} email.text - The plain text content of the email.
- * @param {number} ttl - The time-to-live of the email.
- * @return {Promise<string>} - A promise that resolves to the ID of the saved email.
- */
-async function saveEmailToDB(db, email, ttl) {
-  const id = randamId(32);
-  const cache = {};
+  const email = await parser.parse(raw);
+  const id = randomId(32);
+  const cache = {
+    id: id,
+    messageId: email.messageId,
+    from: message.from,
+    to: message.to,
+    subject: email.subject,
+  };
   if (email.html) {
     cache.html = email.html;
   }
@@ -74,18 +68,15 @@ async function saveEmailToDB(db, email, ttl) {
   } else if (email.html) {
     cache.text = convert(email.html, {});
   }
-  if (cache.html || cache.text) {
-    await db.put(id, JSON.stringify(cache), {expirationTtl: ttl});
-  }
-  return id;
+  return cache;
 }
 
 
 /**
  * Checks if the given message can be handled based on the environment.
  *
- * @param {any} message - The message to be checked.
- * @param {object} env - The environment object containing BLOCK_LIST and WHITE_LIST.
+ * @param {EmailMessage} message - The message to be checked.
+ * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
  * @return {boolean} - Returns true if the message can be handled, false otherwise.
  */
 function canHandleMessage(message, env) {
@@ -114,8 +105,8 @@ function canHandleMessage(message, env) {
     }
     return false;
   };
-  
-  const address = []
+
+  const address = [];
   if (message.from) {
     address.push(message.from);
   }
@@ -123,8 +114,8 @@ function canHandleMessage(message, env) {
     address.push(message.to);
   }
   for (const addr of address) {
-    if (!matchAddress(WHITE_LIST, message.from)) {
-      if (matchAddress(BLOCK_LIST, message.from)) {
+    if (!matchAddress(WHITE_LIST, addr)) {
+      if (matchAddress(BLOCK_LIST, addr)) {
         return false;
       }
     }
@@ -154,12 +145,11 @@ async function sendTelegramRequest(token, method, body) {
 /**
    * Sends an email message to Telegram.
    *
-   * @param {object} message - The email message to be sent.
-   * @param {object} env - The environment variables.
-   * @param {object} ctx - The context object.
+   * @param {EmailMessage} message - The email message to be sent.
+   * @param {Environment} env - The environment variables.
    * @return {Promise<void>} A promise that resolves when the email message is sent successfully.
    */
-async function sendMailToTelegram(message, env, ctx) {
+async function sendMailToTelegram(message, env) {
   const {
     TELEGRAM_TOKEN,
     TELEGRAM_ID,
@@ -172,17 +162,17 @@ async function sendMailToTelegram(message, env, ctx) {
   ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
 
   const mail = await parseEmail(message);
-  const id = await saveEmailToDB(DB, mail, ttl);
+  await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
 
   const text = `
-${message.headers.get('subject')}
+${mail.subject}
 
 -----------
-From\t:\t${message.from}
-To\t\t:\t${message.to}
+From\t:\t${mail.from}
+To\t\t:\t${mail.to}
   `;
-  const preview = `https://${DOMAIN}/email/${id}?mode=text`;
-  const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
+  const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
+  const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
 
   await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
     chat_id: TELEGRAM_ID,
@@ -193,7 +183,7 @@ To\t\t:\t${message.to}
         [
           {
             text: 'Preview',
-            callback_data: `p:${id}`,
+            callback_data: `p:${mail.id}`,
           },
           {
             text: 'Text',
@@ -212,20 +202,18 @@ To\t\t:\t${message.to}
 /**
  * Handles the incoming Telegram webhook request.
  *
- * @param {object} req - The fetch request object.
- * @param {string} req.params.token - The Telegram bot token.
+ * @param {Request} req - The fetch request object.
  * @param {object} env - The environment object.
- * @param {object} ctx - The context object.
  * @return {Promise<void>} The fetch response.
  */
-async function telegramWebhookHandler(req, env, ctx) {
+async function telegramWebhookHandler(req, env) {
   const {
     TELEGRAM_TOKEN,
     DB,
   } = env;
-  if (req.params.token !== TELEGRAM_TOKEN) {
-    return;
-  }
+  /**
+   * @type {TelegramWebhookRequest}
+   */
   const body = await req.json();
 
   const data = body?.callback_query?.data || '';
@@ -267,7 +255,7 @@ async function telegramWebhookHandler(req, env, ctx) {
  * Handles the fetch request.
  *
  * @param {Request} request - The fetch request object.
- * @param {object} env - The environment object.
+ * @param {Environment} env - The environment object.
  * @param {object} ctx - The context object.
  * @return {Promise<Response>} The fetch response.
  */
@@ -280,15 +268,18 @@ async function fetchHandler(request, env, ctx) {
     DB,
   } = env;
 
-  router.get('/init', async (req) => {
+  router.get('/init', async () => {
     return sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
     });
   });
 
   router.post('/telegram/:token/webhook', async (req) => {
+    if (req.params.token !== TELEGRAM_TOKEN) {
+      return;
+    }
     try {
-      await telegramWebhookHandler(req, env, ctx);
+      await telegramWebhookHandler(req, env);
     } catch (e) {
       console.error(e);
     }
@@ -333,24 +324,25 @@ async function fetchHandler(request, env, ctx) {
 /**
  * Handles incoming email messages.
  *
- * @param {object} message - The email message object.
- * @param {object} env - The environment variables.
+ * @param {EmailMessage} message - The email message object.
+ * @param {Environment} env - The environment variables.
  * @param {object} ctx - The context object.
  * @return {Promise<void>} - A promise that resolves when the email is processed.
  */
 async function emailHandler(message, env, ctx) {
+  const {
+    FORWARD_LIST,
+  } = env;
+
   if (!canHandleMessage(message, env)) {
     return;
   }
 
   try {
-    await sendMailToTelegram(message, env, ctx);
+    await sendMailToTelegram(message, env);
   } catch (e) {
     console.error(e);
   }
-  const {
-    FORWARD_LIST,
-  } = env;
 
   try {
     const forwardList = (FORWARD_LIST || '').split(',');

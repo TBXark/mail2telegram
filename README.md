@@ -71,7 +71,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and three buttons are included.
 
-Using `Preview` allows you to directly preview the plain text mode of the email in the bot. However, there is a limit of 4096 characters. If it exceeds 4096 characters, you can use `TEXT` or `HTML` to view the complete email. Below the preview message, there is a `Read` button that can be clicked to close the preview.
+Using `Preview` allows you to directly preview the plain text mode of the email in the bot. However, there is a limit of 4096 characters. If it exceeds 4096 characters, you can use `TEXT` or `HTML` to view the complete email. Below the preview message, there is a `Close` button that can be clicked to close the preview.
 
 Using `TEXT`, you can see plain text emails. Using `HTML`, you can see rich-text emails which may contain certain scripts or other tracking links. It is recommended to use rich-text mode only when necessary or when confirming that the source is reliable.
 
