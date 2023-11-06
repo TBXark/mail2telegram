@@ -5016,19 +5016,19 @@ function compile$1(options = {}) {
       builder.addInline(options.limits.ellipsis || "");
     }
   );
-  return function(html2, metadata = void 0) {
-    return process(html2, metadata, options, picker, findBaseElements, limitedWalk);
+  return function(html, metadata = void 0) {
+    return process(html, metadata, options, picker, findBaseElements, limitedWalk);
   };
 }
-function process(html2, metadata, options, picker, findBaseElements, walk) {
+function process(html, metadata, options, picker, findBaseElements, walk) {
   const maxInputLength = options.limits.maxInputLength;
-  if (maxInputLength && html2 && html2.length > maxInputLength) {
+  if (maxInputLength && html && html.length > maxInputLength) {
     console.warn(
-      `Input length ${html2.length} is above allowed limit of ${maxInputLength}. Truncating without ellipsis.`
+      `Input length ${html.length} is above allowed limit of ${maxInputLength}. Truncating without ellipsis.`
     );
-    html2 = html2.substring(0, maxInputLength);
+    html = html.substring(0, maxInputLength);
   }
-  const document = parseDocument(html2, { decodeEntities: options.decodeEntities });
+  const document = parseDocument(html, { decodeEntities: options.decodeEntities });
   const bases = findBaseElements(document.children);
   const builder = new BlockTextBuilder(options, picker, metadata);
   walk(bases, builder);
@@ -5655,8 +5655,8 @@ function compile(options = {}) {
   handleDeprecatedOptions(options);
   return compile$1(options);
 }
-function convert(html2, options = {}, metadata = void 0) {
-  return compile(options)(html2, metadata);
+function convert(html, options = {}, metadata = void 0) {
+  return compile(options)(html, metadata);
 }
 function handleDeprecatedOptions(options) {
   if (options.tags) {
@@ -5697,7 +5697,7 @@ function handleDeprecatedOptions(options) {
 }
 
 // index.js
-function randamId(length) {
+function randomId(length) {
   const elements = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let result = "";
   for (let i2 = 0; i2 < length; i2++) {
@@ -5723,30 +5723,31 @@ async function parseEmail(message) {
   const raw = await streamToArrayBuffer(message.raw, message.rawSize);
   const PostalMime = require_postal_mime();
   const parser = new PostalMime.default();
-  return await parser.parse(raw);
-}
-async function saveEmailToDB(db, email, ttl) {
-  const id = randamId(32);
-  const cache = {};
+  const email = await parser.parse(raw);
+  const id = randomId(32);
+  const cache = {
+    id,
+    messageId: email.messageId,
+    from: message.from,
+    to: message.to,
+    subject: email.subject
+  };
   if (email.html) {
     cache.html = email.html;
   }
   if (email.text) {
     cache.text = email.text;
   } else if (email.html) {
-    cache.text = convert(html, {});
+    cache.text = convert(email.html, {});
   }
-  if (cache.html || cache.text) {
-    await db.put(id, JSON.stringify(cache), { expirationTtl: ttl });
-  }
-  return id;
+  return cache;
 }
 function canHandleMessage(message, env) {
   const {
     BLOCK_LIST,
     WHITE_LIST
   } = env;
-  const matchAddress = (raw, address) => {
+  const matchAddress = (raw, address2) => {
     if (!raw) {
       return false;
     }
@@ -5761,15 +5762,24 @@ function canHandleMessage(message, env) {
     }
     for (const item of list) {
       const regex = new RegExp(item);
-      if (regex.test(address)) {
+      if (regex.test(address2)) {
         return true;
       }
     }
     return false;
   };
-  if (!matchAddress(WHITE_LIST, message.from)) {
-    if (matchAddress(BLOCK_LIST, message.from)) {
-      return false;
+  const address = [];
+  if (message.from) {
+    address.push(message.from);
+  }
+  if (message.to) {
+    address.push(message.to);
+  }
+  for (const addr of address) {
+    if (!matchAddress(WHITE_LIST, addr)) {
+      if (matchAddress(BLOCK_LIST, addr)) {
+        return false;
+      }
     }
   }
   return true;
@@ -5783,7 +5793,7 @@ async function sendTelegramRequest(token2, method, body) {
     body: JSON.stringify(body)
   });
 }
-async function sendMailToTelegram(message, env, ctx) {
+async function sendMailToTelegram(message, env) {
   const {
     TELEGRAM_TOKEN,
     TELEGRAM_ID,
@@ -5794,16 +5804,16 @@ async function sendMailToTelegram(message, env, ctx) {
   let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
   ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
   const mail = await parseEmail(message);
-  const id = await saveEmailToDB(DB, mail, ttl);
+  await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
   const text = `
-${message.headers.get("subject")}
+${mail.subject}
 
 -----------
-From	:	${message.from}
-To		:	${message.to}
+From	:	${mail.from}
+To		:	${mail.to}
   `;
-  const preview = `https://${DOMAIN}/email/${id}?mode=text`;
-  const fullHTML = `https://${DOMAIN}/email/${id}?mode=html`;
+  const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
+  const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
   await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
     chat_id: TELEGRAM_ID,
     text,
@@ -5813,7 +5823,7 @@ To		:	${message.to}
         [
           {
             text: "Preview",
-            callback_data: `p:${id}`
+            callback_data: `p:${mail.id}`
           },
           {
             text: "Text",
@@ -5828,14 +5838,11 @@ To		:	${message.to}
     }
   });
 }
-async function telegramWebhookHandler(req, env, ctx) {
+async function telegramWebhookHandler(req, env) {
   const {
     TELEGRAM_TOKEN,
     DB
   } = env;
-  if (req.params.token !== TELEGRAM_TOKEN) {
-    return;
-  }
   const body = await req.json();
   const data = body?.callback_query?.data || "";
   const chatId = body?.callback_query?.message?.chat?.id;
@@ -5852,7 +5859,7 @@ async function telegramWebhookHandler(req, env, ctx) {
           inline_keyboard: [
             [
               {
-                text: "Read",
+                text: "Close",
                 callback_data: `d:`
               }
             ]
@@ -5878,14 +5885,17 @@ async function fetchHandler(request, env, ctx) {
     DOMAIN,
     DB
   } = env;
-  router.get("/init", async (req) => {
+  router.get("/init", async () => {
     return sendTelegramRequest(TELEGRAM_TOKEN, "setWebhook", {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`
     });
   });
   router.post("/telegram/:token/webhook", async (req) => {
+    if (req.params.token !== TELEGRAM_TOKEN) {
+      return;
+    }
     try {
-      await telegramWebhookHandler(req, env, ctx);
+      await telegramWebhookHandler(req, env);
     } catch (e3) {
       console.error(e3);
     }
@@ -5924,17 +5934,17 @@ async function fetchHandler(request, env, ctx) {
   });
 }
 async function emailHandler(message, env, ctx) {
+  const {
+    FORWARD_LIST
+  } = env;
   if (!canHandleMessage(message, env)) {
     return;
   }
   try {
-    await sendMailToTelegram(message, env, ctx);
+    await sendMailToTelegram(message, env);
   } catch (e3) {
     console.error(e3);
   }
-  const {
-    FORWARD_LIST
-  } = env;
   try {
     const forwardList = (FORWARD_LIST || "").split(",");
     for (const forward of forwardList) {
