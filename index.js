@@ -72,7 +72,7 @@ async function saveEmailToDB(db, email, ttl) {
   if (email.text) {
     cache.text = email.text;
   } else if (email.html) {
-    cache.text = convert(html, {});
+    cache.text = convert(email.html, {});
   }
   if (cache.html || cache.text) {
     await db.put(id, JSON.stringify(cache), {expirationTtl: ttl});
