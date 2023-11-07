@@ -5784,27 +5784,11 @@ function canHandleMessage(message, env) {
   }
   return true;
 }
-async function sendTelegramRequest(token2, method, body) {
-  return await fetch(`https://api.telegram.org/bot${token2}/${method}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-}
-async function sendMailToTelegram(message, env) {
+async function renderEmailListMode(mail, env) {
   const {
-    TELEGRAM_TOKEN,
-    TELEGRAM_ID,
-    MAIL_TTL,
-    DOMAIN,
-    DB
+    OPENAI_API_KEY,
+    DOMAIN
   } = env;
-  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
-  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
-  const mail = await parseEmail(message);
-  await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
   const text = `
 ${mail.subject}
 
@@ -5814,29 +5798,132 @@ To		:	${mail.to}
   `;
   const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
   const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
-  await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
-    chat_id: TELEGRAM_ID,
+  const keyboard = [
+    {
+      text: "Preview",
+      callback_data: `p:${mail.id}`
+    },
+    {
+      text: "Summary",
+      callback_data: `s:${mail.id}`
+    },
+    {
+      text: "Text",
+      url: preview
+    },
+    {
+      text: "HTML",
+      url: fullHTML
+    }
+  ];
+  if (!OPENAI_API_KEY) {
+    keyboard.splice(1, 1);
+  }
+  return {
     text,
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [keyboard]
+    }
+  };
+}
+async function renderEmailPreviewMode(mail, env) {
+  return {
+    text: mail.text.substring(0, 4096),
     disable_web_page_preview: true,
     reply_markup: {
       inline_keyboard: [
         [
           {
-            text: "Preview",
-            callback_data: `p:${mail.id}`
-          },
-          {
-            text: "Text",
-            url: preview
-          },
-          {
-            text: "HTML",
-            url: fullHTML
+            text: "Back",
+            callback_data: `l:${mail.id}`
           }
         ]
       ]
     }
+  };
+}
+async function renderEmailSummaryMode(mail, env) {
+  let {
+    OPENAI_API_KEY: key,
+    OPENAI_COMPLETIONS_API: endpoint,
+    OPENAI_CHAT_MODEL: model,
+    SUMMARY_TARGET_LANG: targetLang
+  } = env;
+  const req = {
+    text: "",
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "Back",
+            callback_data: `l:${mail.id}`
+          }
+        ]
+      ]
+    }
+  };
+  if (!key) {
+    req.text = "OpenAI API key is not set.";
+    return req;
+  }
+  endpoint = endpoint || "https://api.openai.com/v1/chat/completions";
+  model = model || "gpt-3.5-turbo";
+  targetLang = targetLang || "english";
+  const prompt = `Summarize the following text in approximately 50 words with ${targetLang}
+
+${mail.text}`;
+  req.text = await sendOpenAIRequest(key, endpoint, model, prompt);
+  return req;
+}
+async function sendTelegramRequest(token2, method, body) {
+  return await fetch(`https://api.telegram.org/bot${token2}/${method}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
   });
+}
+async function sendOpenAIRequest(key, endpoint, model, prompt) {
+  const resp = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful assistant."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    })
+  });
+  const body = await resp.json();
+  return body.choices[0].message.content;
+}
+async function sendMailToTelegram(message, env) {
+  const {
+    TELEGRAM_TOKEN,
+    TELEGRAM_ID,
+    MAIL_TTL,
+    DB
+  } = env;
+  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
+  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
+  const mail = await parseEmail(message);
+  await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
+  const req = await renderEmailListMode(mail, env);
+  req.chat_id = TELEGRAM_ID;
+  await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", req);
 }
 async function telegramWebhookHandler(req, env) {
   const {
@@ -5847,34 +5934,22 @@ async function telegramWebhookHandler(req, env) {
   const data = body?.callback_query?.data || "";
   const chatId = body?.callback_query?.message?.chat?.id;
   const messageId = body?.callback_query?.message?.message_id;
-  if (data.startsWith("p:")) {
+  const renderMap = {
+    p: renderEmailPreviewMode,
+    l: renderEmailListMode,
+    s: renderEmailSummaryMode
+  };
+  if (data.startsWith("p:") || data.startsWith("l:") || data.startsWith("s:")) {
     const id = data.substring(2);
-    const value = await DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
-    if (value?.text) {
-      await sendTelegramRequest(TELEGRAM_TOKEN, "sendMessage", {
-        chat_id: chatId,
-        text: value.text.substring(0, 4096),
-        disable_web_page_preview: true,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Close",
-                callback_data: `d:`
-              }
-            ]
-          ]
-        }
-      });
+    const render2 = renderMap[data[0]];
+    const value = JSON.parse(await DB.get(id));
+    const req2 = await render2(value, env);
+    if (req2) {
+      req2.chat_id = chatId;
+      req2.message_id = messageId;
+      await sendTelegramRequest(TELEGRAM_TOKEN, "editMessageText", req2);
       return;
     }
-  }
-  if (data === "d:") {
-    await sendTelegramRequest(TELEGRAM_TOKEN, "deleteMessage", {
-      chat_id: chatId,
-      message_id: messageId
-    });
-    return;
   }
   console.log(`Unknown data: ${data}`);
 }
@@ -5892,7 +5967,7 @@ async function fetchHandler(request, env, ctx) {
   });
   router.post("/telegram/:token/webhook", async (req) => {
     if (req.params.token !== TELEGRAM_TOKEN) {
-      return;
+      return new Response("Invalid token");
     }
     try {
       await telegramWebhookHandler(req, env);
@@ -5904,25 +5979,19 @@ async function fetchHandler(request, env, ctx) {
   router.get("/email/:id", async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || "text";
-    const value = await DB.get(id).then((value2) => JSON.parse(value2)).catch(() => null);
-    if (value?.[mode]) {
-      const headers = {};
-      switch (mode) {
-        case "html":
-          headers["content-type"] = "text/html; charset=utf-8";
-          break;
-        default:
-          headers["content-type"] = "text/plain; charset=utf-8";
-          break;
-      }
-      return new Response(value[mode], {
-        headers
-      });
-    } else {
-      return new Response("Not found", {
-        status: 404
-      });
+    const value = JSON.parse(await DB.get(id));
+    const headers = {};
+    switch (mode) {
+      case "html":
+        headers["content-type"] = "text/html; charset=utf-8";
+        break;
+      default:
+        headers["content-type"] = "text/plain; charset=utf-8";
+        break;
     }
+    return new Response(value[mode], {
+      headers
+    });
   });
   router.all("*", async () => {
     return new Response("It works!");

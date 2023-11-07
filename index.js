@@ -131,7 +131,6 @@ function canHandleMessage(message, env) {
  */
 async function renderEmailListMode(mail, env) {
   const {
-    TELEGRAM_ID,
     OPENAI_API_KEY,
     DOMAIN,
   } = env;
@@ -168,7 +167,6 @@ To\t\t:\t${mail.to}
     keyboard.splice(1, 1);
   }
   return {
-    chat_id: TELEGRAM_ID,
     text: text,
     disable_web_page_preview: true,
     reply_markup: {
@@ -184,11 +182,7 @@ To\t\t:\t${mail.to}
  * @param {Environment} env - The environment object.
  * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object. */
 async function renderEmailPreviewMode(mail, env) {
-  const {
-    TELEGRAM_ID,
-  } = env;
   return {
-    chat_id: TELEGRAM_ID,
     text: mail.text.substring(0, 4096),
     disable_web_page_preview: true,
     reply_markup: {
@@ -213,14 +207,12 @@ async function renderEmailPreviewMode(mail, env) {
  */
 async function renderEmailSummaryMode(mail, env) {
   let {
-    TELEGRAM_ID,
     OPENAI_API_KEY: key,
     OPENAI_COMPLETIONS_API: endpoint,
     OPENAI_CHAT_MODEL: model,
     SUMMARY_TARGET_LANG: targetLang,
   } = env;
   const req = {
-    chat_id: TELEGRAM_ID,
     text: '',
     disable_web_page_preview: true,
     reply_markup: {
@@ -311,6 +303,7 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
 async function sendMailToTelegram(message, env) {
   const {
     TELEGRAM_TOKEN,
+    TELEGRAM_ID,
     MAIL_TTL,
     DB,
   } = env;
@@ -321,6 +314,7 @@ async function sendMailToTelegram(message, env) {
   const mail = await parseEmail(message);
   await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
   const req = await renderEmailListMode(mail, env);
+  req.chat_id = TELEGRAM_ID;
   await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', req);
 }
 
