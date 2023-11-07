@@ -27,6 +27,10 @@
  * @property {string} WHITE_LIST - The list of email addresses to allow.
  * @property {string} MAIL_TTL - The TTL of the email in seconds.
  * @property {string} DOMAIN - The domain name of the service.
+ * @property {string} [OPENAI_API_KEY] - The OpenAI API key.
+ * @property {string} [OPENAI_COMPLETIONS_API] - The OpenAI API  for completions.
+ * @property {string} [OPENAI_CHAT_MODEL] - The OpenAI model.
+ * @property {string} [SUMMARY_TARGET_LANG] - The target language of the summary.
  * @property {Database} DB - The database object.
  */
 
@@ -48,4 +52,17 @@
  * @property {string} subject - The subject of the email.
  * @property {string} [html] - The HTML content of the email.
  * @property {string} [text] - The text content of the email.
+ */
+
+
+/**
+ * @typedef {object} TelegramInlineKeyboardButton
+ * @property {string} text - The text of the button.
+ * @property {string} callback_data - The callback data of the button.
+ * @typedef {object} TelegramSendMessageRequest
+ * @property {number} chat_id - The chat ID.
+ * @property {string} text - The text content of the message.
+ * @property {boolean} disable_web_page_preview - Whether to disable the web page preview.
+ * @property {object} reply_markup - The reply markup.
+ * @property {TelegramInlineKeyboardButton[][]} reply_markup.inline_keyboard - The inline keyboard.
  */

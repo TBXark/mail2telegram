@@ -53,31 +53,51 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 ## Configuration
 
-| KEY | Description |
-| ---- | ---- |
-| TELEGRAM_ID | Your Telegram ID |
-| TELEGRAM_TOKEN | Telegram Bot Token |
-| DOMAIN | Workers domain name |
-| FORWARD_LIST | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,` |
-| WHITE_LIST | Sender whitelist, an array of regular expressions converted to a string, example: `[\".*@10086\\\\.cn\"]` |
-| BLOCK_LIST | Sender blacklist, an array of regular expressions converted to a string |
-| MAIL_TTL | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up.|
-| DB | Bind `KV Namespace Bindings` database to worker with the name `DB`.
+| KEY                    | Description                                                                                                                                          |
+|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TELEGRAM_ID            | Your Telegram ID                                                                                                                                     |
+| TELEGRAM_TOKEN         | Telegram Bot Token                                                                                                                                   |
+| DOMAIN                 | Workers domain name                                                                                                                                  |
+| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                 |
+| WHITE_LIST             | Sender whitelist, an array of regular expressions converted to a string, example: `[\".*@10086\\\\.cn\"]`                                            |
+| BLOCK_LIST             | Sender blacklist, an array of regular expressions converted to a string                                                                              |
+| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up. |
+| OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear.                                         |
+| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                      |
+| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-3.5-turbo`                                                                                                 |
+| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english`                                                                          |
+| DB                     | Bind `KV Namespace Bindings` database to worker with the name `DB`.                                                                                  |
 
 > `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
 
 
 ## Usage
 
-When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and three buttons are included.
 
-Using `Preview` allows you to directly preview the plain text mode of the email in the bot. However, there is a limit of 4096 characters. If it exceeds 4096 characters, you can use `TEXT` or `HTML` to view the complete email. Below the preview message, there is a `Close` button that can be clicked to close the preview.
+The default message structure is as follows.
+```
+[Subject]
 
-Using `TEXT`, you can see plain text emails. Using `HTML`, you can see rich-text emails which may contain certain scripts or other tracking links. It is recommended to use rich-text mode only when necessary or when confirming that the source is reliable.
+-----------
+From : [sender]
+To: [recipient]
 
-For security reasons, when exceeding the mail cache retention time set by `MAIL_TTL`, links opened by clicking on buttons will not work. You can modify environment variables yourself to adjust expiration time.
+(Preview)(Summary)(Text)(HTML)
+
+```
+
+When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and four buttons are included.
+
+Using `Preview` allows you to directly preview the plain text mode of the email in the bot. However, there is a limit of 4096 characters. If it exceeds 4096 characters, you can use `TEXT` or `HTML` to view the complete email. Below the preview message, there is a `Back` button that can be clicked to close the preview.
+
+When you configure `OPENAI_API_KEY`, a `Summary` button will appear so that you can summarize the content of the email. Below the summary message, there is a `Back` button that can be clicked to close the summary.
+
+Using `TEXT`, you can see plain text emails; using `HTML`, you can see rich-text emails. However, they may contain certain scripts or other tracking links. It is recommended to use rich-text mode only when necessary or when confirming that there are no issues with its source.
+
+For security reasons, when exceeding the mail cache retention time (`MAIL_TTL`), links opened by buttons cannot be accessed. You can modify environment variables yourself to adjust expiration time.
 
 This Bot does not support attachments. If you need attachment support, you can combine it with my another project [testmail-viewer](https://github.com/TBXark/testmail-viewer) and forward emails to your testmail using `FORWARD_LIST`. This way, you can download your attachments using [testmail-viewer](https://github.com/TBXark/testmail-viewer).
+
 
 ## License
 

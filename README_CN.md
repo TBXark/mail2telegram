@@ -53,25 +53,44 @@ mail2telegram
 
 ## 配置
 
-|  KEY    |  描述   |
-| ---- | ---- |
-| TELEGRAM_ID |   你的Telegram ID   |
-| TELEGRAM_TOKEN | Telegram Bot Token |
-| DOMAIN  |   Workers的域名  |
-| FORWARD_LIST | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔 |
-| WHITE_LIST | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]` |
-| BLOCK_LIST | 发件人黑名单，一个正则表达式数组转成字符串 |
-| MAIL_TTL | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份 |
-| DB | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB` |
+| KEY                    | 描述                                                        |
+|------------------------|-----------------------------------------------------------|
+| TELEGRAM_ID            | 你的Telegram ID                                             |
+| TELEGRAM_TOKEN         | Telegram Bot Token                                        |
+| DOMAIN                 | Workers的域名                                                |
+| FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                   |
+| WHITE_LIST             | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]`           |
+| BLOCK_LIST             | 发件人黑名单，一个正则表达式数组转成字符串                                     |
+| MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                    |
+| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮            |
+| OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions` |
+| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                               |
+| SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                  |
+| DB                     | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`          |
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
 
 
 ## 特别说明
 
-当邮件转发通知到Telegram的时候只有标题，发件人，收件人还有三个按钮。
+默认消息结构如下
+```
+[Subject]
 
-使用`Preview`可以在bot中直接预览纯文本模式的邮件，但是有4096个字符的限制，如果超过了4096个字符，你可以使用`TEXT`或者`HTML`查看完整的邮件。预览消息下面有`Close`按钮，点击后即可关闭预览。
+-----------
+From : [sender]
+To: [recipient]
+
+(Preview)(Summary)(Text)(HTML)
+
+```
+
+
+当邮件转发通知到Telegram的时候只有标题，发件人，收件人还有四个按钮。
+
+使用`Preview`可以在bot中直接预览纯文本模式的邮件，但是有4096个字符的限制，如果超过了4096个字符，你可以使用`TEXT`或者`HTML`查看完整的邮件。预览消息下面有`Back`按钮，点击后即可关闭预览。
+
+当你配置了`OPENAI_API_KEY`就会出现`Summary`按钮，这样你可以对邮件进行内容总结。总结消息下面有`Back`按钮，点击后即可关闭总结。
 
 使用`TEXT`可以看到纯文本的邮件，`HTML`可以看到富文本的邮件，但是他其中可能包含某些脚本或者其他追踪链接。建议只有当你有需要的时候或者确认来源没有问题的时候才使用富文本模式。
 
