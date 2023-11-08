@@ -66,6 +66,7 @@ mail2telegram
 | OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions` |
 | OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                               |
 | SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                  |
+| GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                                   |
 | DB                     | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`          |
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
@@ -98,7 +99,7 @@ To: [recipient]
 
 此Bot展示不支持附件，如果你需要附件支持可以联合我的另外一个项目[testmail-viewer](https://github.com/TBXark/testmail-viewer), 使用`FORWARD_LIST`将邮件转发到你的testmail，这样你就可以使用[testmail-viewer](https://github.com/TBXark/testmail-viewer)下载你的附件。
 
-
+由于Workers限制，邮件大小（主要是附件大小）一旦太大就会执行函数超时，此时Workers会进行多次重试，可能导致你收到多次的通知，备份邮箱也会收到多次的邮件。而且这个重试是有次数限制的，一旦超过限制就不会继续重试了。这就有可能导致你的邮件丢失。所以建议你在`FORWARD_LIST`中填入你的备份邮箱，这样即使你的邮件丢失了，你也可以在备份邮箱中找到你的邮件。如果你经常遇到这个问题你可以尝试打开守护模式（`GUARDIAN_MODE`），这样他就会记录已经执行过的操作并不在下一次重试时执行。从而减少重复消息的干扰，而且增加worker的成功概率。但是这个操作会消耗较多的KV写入次数，所以建议你在有需要的时候开启。
 
 ## 许可证
 

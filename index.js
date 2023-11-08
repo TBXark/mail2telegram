@@ -1,5 +1,6 @@
 import {Router} from 'itty-router';
 import {convert} from 'html-to-text';
+import PostalMime from 'postal-mime';
 import './types.js';
 
 /**
@@ -47,26 +48,32 @@ async function streamToArrayBuffer(stream, streamSize) {
  * @return {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
  */
 async function parseEmail(message) {
-  const raw = await streamToArrayBuffer(message.raw, message.rawSize);
-  const PostalMime = require('postal-mime');
-  // eslint-disable-next-line
-  const parser = new PostalMime.default();
-  const email = await parser.parse(raw);
   const id = randomId(32);
   const cache = {
     id: id,
-    messageId: email.messageId,
+    messageId: message.headers.get('Message-ID'),
     from: message.from,
     to: message.to,
-    subject: email.subject,
+    subject: message.headers.get('Subject'),
   };
-  if (email.html) {
-    cache.html = email.html;
-  }
-  if (email.text) {
-    cache.text = email.text;
-  } else if (email.html) {
-    cache.text = convert(email.html, {});
+  try {
+    const raw = await streamToArrayBuffer(message.raw, message.rawSize);
+    const parser = new PostalMime();
+    const email = await parser.parse(raw);
+    cache.messageId = email.messageId;
+    cache.subject = email.subject;
+    if (email.html) {
+      cache.html = email.html;
+    }
+    if (email.text) {
+      cache.text = email.text;
+    } else if (email.html) {
+      cache.text = convert(email.html, {});
+    }
+  } catch (e) {
+    const msg = `Error parsing email: ${e.message}`;
+    cache.text = msg;
+    cache.html = msg;
   }
   return cache;
 }
@@ -305,7 +312,6 @@ async function sendMailToTelegram(message, env) {
   } = env;
 
   const ttl = parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
-
   const mail = await parseEmail(message);
   await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
   const req = await renderEmailListMode(mail, env);
@@ -447,24 +453,56 @@ async function fetchHandler(request, env, ctx) {
 async function emailHandler(message, env, ctx) {
   const {
     FORWARD_LIST,
+    DB,
+    GUARDIAN_MODE,
   } = env;
-
+  const id = message.headers.get('Message-ID');
+  const statusTTL = {expirationTtl: 60 * 60};
+  const isGuardianMode = (GUARDIAN_MODE === 'true');
+  let status = {
+    telegram: false,
+    forward: [],
+  };
   if (!canHandleMessage(message, env)) {
     return;
   }
-  try {
-    await sendMailToTelegram(message, env);
-  } catch (e) {
-    console.error(e);
+  if (isGuardianMode) {
+    try {
+      const raw = await DB.get(id);
+      if (raw) {
+        status = JSON.parse(raw);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
   try {
     const forwardList = (FORWARD_LIST || '').split(',');
     for (const forward of forwardList) {
       try {
-        await message.forward(forward.trim());
+        const add = forward.trim();
+        if (status.forward.includes(add)) {
+          continue;
+        }
+        await message.forward(add);
+        if (isGuardianMode) {
+          status.forward.push(add);
+          await DB.put(id, JSON.stringify(status), statusTTL);
+        }
       } catch (e) {
         console.error(e);
       }
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  try {
+    if (!status.telegram) {
+      await sendMailToTelegram(message, env);
+    }
+    if (isGuardianMode) {
+      status.telegram = true;
+      await DB.put(id, JSON.stringify(status), statusTTL);
     }
   } catch (e) {
     console.error(e);

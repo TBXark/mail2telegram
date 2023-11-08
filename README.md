@@ -66,6 +66,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 | OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                      |
 | OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-3.5-turbo`                                                                                                 |
 | SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english`                                                                          |
+| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`.                                                                                   |
 | DB                     | Bind `KV Namespace Bindings` database to worker with the name `DB`.                                                                                  |
 
 > `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
@@ -98,6 +99,7 @@ For security reasons, when exceeding the mail cache retention time (`MAIL_TTL`),
 
 This Bot does not support attachments. If you need attachment support, you can combine it with my another project [testmail-viewer](https://github.com/TBXark/testmail-viewer) and forward emails to your testmail using `FORWARD_LIST`. This way, you can download your attachments using [testmail-viewer](https://github.com/TBXark/testmail-viewer).
 
+Due to the limitation of Workers, if the email size (especially the attachment size) is too large, it will cause function timeout. At this time, Workers will retry multiple times, which may result in receiving multiple notifications and backup emails. Moreover, there is a limit on the number of retries. Once exceeded, no further retries will be made. This may lead to your email being lost. Therefore, it is recommended that you fill in your backup email in `FORWARD_LIST`, so that even if your email is lost, you can find it in your backup mailbox. If you frequently encounter this problem, you can try enabling Guardian Mode (`GUARDIAN_MODE`), which will record the operations already performed and not execute them again during the next retry. This reduces interference from duplicate messages and increases the success rate of workers. However, this operation consumes more KV write operations, so it is recommended to enable it when necessary.
 
 ## License
 

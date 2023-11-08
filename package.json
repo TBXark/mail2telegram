@@ -15,13 +15,14 @@
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
     "build": "esbuild index.js --bundle --outfile=./build/index.js --format=esm",
-    "lint": "eslint --fix ."
+    "lint": "eslint --fix .",
+    "test": "node test.js"
   },
   "license": "MIT",
   "dependencies": {
     "html-to-text": "^9.0.5",
     "itty-router": "^4.0.23",
-    "postal-mime": "^1.0.16"
+    "postal-mime": "^2.0.1"
   },
   "devDependencies": {
     "eslint": ">=5.16.0",

@@ -1021,10 +1021,10 @@ picomatch@^2.0.4, picomatch@^2.2.1:
   resolved "https://registry.npmmirror.com/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
 
-postal-mime@^1.0.16:
-  version "1.0.16"
-  resolved "https://registry.npmmirror.com/postal-mime/-/postal-mime-1.0.16.tgz#dbc7fecb6f8544d3968706810665c9bde35fec3d"
-  integrity sha512-DIpZ6HfV8GIGerAOui+Q3YEE9EZNK3sdZdH2yGVhbVsB7F6bbD3L4D+W2wch7aV+aOkY5EMjMuKYbRDQGdSQBA==
+postal-mime@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmmirror.com/postal-mime/-/postal-mime-2.0.1.tgz#51b4f13f1b0120e46abba3e73a0a18e9041459e0"
+  integrity sha512-ZsPbRsHlMv6ODJ99hCCZJf6BX0b3zZMX3Ydun8xPOKtkeDieaTxH6aPx6o3tkOYausufWiXPa/npdSuQjWsLwA==
 
 prelude-ls@^1.2.1:
   version "1.2.1"

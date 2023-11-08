@@ -10,6 +10,11 @@
  * @property {function(string, Headers?): Promise<void>} forward - Forward the email to the specified recipient.
  * @property {function(EmailMessage): Promise<void>} reply - Reply the email to the sender.
  */
+/**
+ * @typedef {object} EmailHandleStatus
+ * @property {boolean} [telegram] - Did forwarding to Telegram succeed?
+ * @property {Array<string>} [forward] - The email addresses to forward the email to.
+ */
 
 /**
  * @typedef {object} Database
@@ -31,6 +36,7 @@
  * @property {string} [OPENAI_COMPLETIONS_API] - The OpenAI API  for completions.
  * @property {string} [OPENAI_CHAT_MODEL] - The OpenAI model.
  * @property {string} [SUMMARY_TARGET_LANG] - The target language of the summary.
+ * @property {string} [GUARDIAN_MODE] - Whether to enable guardian mode.
  * @property {Database} DB - The database object.
  */
 
