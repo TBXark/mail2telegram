@@ -453,8 +453,8 @@ async function fetchHandler(request, env, ctx) {
 async function emailHandler(message, env, ctx) {
   const {
     FORWARD_LIST,
-    DB,
     GUARDIAN_MODE,
+    DB,
   } = env;
   const id = message.headers.get('Message-ID');
   const statusTTL = {expirationTtl: 60 * 60};

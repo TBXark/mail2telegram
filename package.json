@@ -14,9 +14,8 @@
     "start": "node index.js",
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
-    "build": "esbuild index.js --bundle --outfile=./build/index.js --format=esm",
-    "lint": "eslint --fix .",
-    "test": "node test.js"
+    "build": "esbuild index.js --bundle --minify --outfile=./build/index.js --format=esm",
+    "lint": "eslint --fix ."
   },
   "license": "MIT",
   "dependencies": {
