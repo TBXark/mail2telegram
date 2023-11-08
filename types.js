@@ -37,6 +37,7 @@
 /**
  * @typedef {object} TelegramWebhookRequest
  * @property {object} callback_query
+ * @property {string} callback_query.id
  * @property {string} callback_query.data
  * @property {object} callback_query.message
  * @property {number} callback_query.message.chat.id
@@ -58,7 +59,8 @@
 /**
  * @typedef {object} TelegramInlineKeyboardButton
  * @property {string} text - The text of the button.
- * @property {string} callback_data - The callback data of the button.
+ * @property {string} [callback_data] - The callback data of the button.
+ * @property {string} [url] - The URL of the button.
  * @typedef {object} TelegramSendMessageRequest
  * @property {number} chat_id - The chat ID.
  * @property {string} text - The text content of the message.

@@ -123,7 +123,7 @@ function canHandleMessage(message, env) {
 }
 
 /**
- * Render the email  mode.
+ * Render the email list  mode.
  *
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
@@ -176,26 +176,37 @@ To\t\t:\t${mail.to}
 }
 
 /**
- * Render the email preview  mode.
+ * Render the email detail.
  *
- * @param {EmailCache} mail - The email object.
- * @param {Environment} env - The environment object.
- * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object. */
-async function renderEmailPreviewMode(mail, env) {
+ * @param {string} text - The email text.
+ * @param {string} id - The email ID.
+ * @return {TelegramSendMessageRequest} - The rendered email detail.
+ */
+function renderEmailDetail(text, id) {
   return {
-    text: mail.text.substring(0, 4096),
+    text: text,
     disable_web_page_preview: true,
     reply_markup: {
       inline_keyboard: [
         [
           {
             text: 'Back',
-            callback_data: `l:${mail.id}`,
+            callback_data: `l:${id}`,
           },
         ],
       ],
     },
   };
+}
+
+/**
+ * Render the email preview  mode.
+ *
+ * @param {EmailCache} mail - The email object.
+ * @param {Environment} env - The environment object.
+ * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object. */
+async function renderEmailPreviewMode(mail, env) {
+  return renderEmailDetail(mail.text.substring(0, 4096), mail.id);
 }
 
 /**
@@ -212,24 +223,7 @@ async function renderEmailSummaryMode(mail, env) {
     OPENAI_CHAT_MODEL: model,
     SUMMARY_TARGET_LANG: targetLang,
   } = env;
-  const req = {
-    text: '',
-    disable_web_page_preview: true,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Back',
-            callback_data: `l:${mail.id}`,
-          },
-        ],
-      ],
-    },
-  };
-  if (!key) {
-    req.text = 'OpenAI API key is not set.';
-    return req;
-  }
+  const req = renderEmailDetail('', mail.id);
   endpoint = endpoint || 'https://api.openai.com/v1/chat/completions';
   model = model || 'gpt-3.5-turbo';
   targetLang = targetLang || 'english';
@@ -245,21 +239,23 @@ async function renderEmailSummaryMode(mail, env) {
  * @param {string} token - The Telegram bot token.
  * @param {string} method - The API method to call.
  * @param {object} body - The JSON body of the request.
- * @return {Promise<Response>} A promise that resolves to the response from the API.
+ * @return {Promise<void>} A promise that resolves to the response from the API.
  */
 async function sendTelegramRequest(token, method, body) {
-  return await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+  const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   });
+  const result = await resp.json();
+  console.log(`Response from Telegram API: ${method}\n${JSON.stringify(result)}`);
 }
 
 
 /**
- * Sends a request to the OpenAI API and returns the response.
+ * Sends a request to the OpenAI API and returns the first choice.
  *
  * @param {string} key - The API key for authentication.
  * @param {string} endpoint - The endpoint URL for the OpenAI API.
@@ -308,8 +304,7 @@ async function sendMailToTelegram(message, env) {
     DB,
   } = env;
 
-  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
-  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
+  const ttl = parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
 
   const mail = await parseEmail(message);
   await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
@@ -335,6 +330,7 @@ async function telegramWebhookHandler(req, env) {
    */
   const body = await req.json();
   const data = body?.callback_query?.data || '';
+  const callbackId = body?.callback_query?.id;
   const chatId = body?.callback_query?.message?.chat?.id;
   const messageId = body?.callback_query?.message?.message_id;
   const renderMap = {
@@ -342,18 +338,33 @@ async function telegramWebhookHandler(req, env) {
     l: renderEmailListMode,
     s: renderEmailSummaryMode,
   };
+  const sendAlert = async (text) => {
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'answerCallbackQuery', {
+      callback_query_id: callbackId,
+      text: text,
+      show_alert: true,
+    });
+  };
   if (data.startsWith('p:') || data.startsWith('l:') || data.startsWith('s:')) {
     const id = data.substring(2);
     const render = renderMap[data[0]];
-    /**
-     * @type {EmailCache}
-     */
-    const value = JSON.parse(await DB.get(id));
-    const req = await render(value, env);
-    if (req) {
-      req.chat_id = chatId;
-      req.message_id = messageId;
-      await sendTelegramRequest(TELEGRAM_TOKEN, 'editMessageText', req);
+    const raw = await DB.get(id);
+    if (raw) {
+      try {
+        /**
+         * @type {EmailCache}
+         */
+        const value = JSON.parse(raw);
+        const req = await render(value, env);
+        req.chat_id = chatId;
+        req.message_id = messageId;
+        await sendTelegramRequest(TELEGRAM_TOKEN, 'editMessageText', req);
+      } catch (e) {
+        await sendAlert(`Error: ${e.message}`);
+        return;
+      }
+    } else {
+      await sendAlert('Email not found');
       return;
     }
   }
@@ -418,6 +429,7 @@ async function fetchHandler(request, env, ctx) {
   });
 
   return router.handle(request).catch((e) => {
+    console.error(e);
     return new Response(e.message, {
       status: 500,
     });

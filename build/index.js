@@ -5827,21 +5827,24 @@ To		:	${mail.to}
     }
   };
 }
-async function renderEmailPreviewMode(mail, env) {
+function renderEmailDetail(text, id) {
   return {
-    text: mail.text.substring(0, 4096),
+    text,
     disable_web_page_preview: true,
     reply_markup: {
       inline_keyboard: [
         [
           {
             text: "Back",
-            callback_data: `l:${mail.id}`
+            callback_data: `l:${id}`
           }
         ]
       ]
     }
   };
+}
+async function renderEmailPreviewMode(mail, env) {
+  return renderEmailDetail(mail.text.substring(0, 4096), mail.id);
 }
 async function renderEmailSummaryMode(mail, env) {
   let {
@@ -5850,24 +5853,7 @@ async function renderEmailSummaryMode(mail, env) {
     OPENAI_CHAT_MODEL: model,
     SUMMARY_TARGET_LANG: targetLang
   } = env;
-  const req = {
-    text: "",
-    disable_web_page_preview: true,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: "Back",
-            callback_data: `l:${mail.id}`
-          }
-        ]
-      ]
-    }
-  };
-  if (!key) {
-    req.text = "OpenAI API key is not set.";
-    return req;
-  }
+  const req = renderEmailDetail("", mail.id);
   endpoint = endpoint || "https://api.openai.com/v1/chat/completions";
   model = model || "gpt-3.5-turbo";
   targetLang = targetLang || "english";
@@ -5878,13 +5864,16 @@ ${mail.text}`;
   return req;
 }
 async function sendTelegramRequest(token2, method, body) {
-  return await fetch(`https://api.telegram.org/bot${token2}/${method}`, {
+  const resp = await fetch(`https://api.telegram.org/bot${token2}/${method}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify(body)
   });
+  const result = await resp.json();
+  console.log(`Response from Telegram API: ${method}
+${JSON.stringify(result)}`);
 }
 async function sendOpenAIRequest(key, endpoint, model, prompt) {
   const resp = await fetch(endpoint, {
@@ -5917,8 +5906,7 @@ async function sendMailToTelegram(message, env) {
     MAIL_TTL,
     DB
   } = env;
-  let ttl = MAIL_TTL && parseInt(MAIL_TTL, 10);
-  ttl = isNaN(ttl) ? 60 * 60 * 24 : ttl;
+  const ttl = parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
   const mail = await parseEmail(message);
   await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
   const req = await renderEmailListMode(mail, env);
@@ -5932,6 +5920,7 @@ async function telegramWebhookHandler(req, env) {
   } = env;
   const body = await req.json();
   const data = body?.callback_query?.data || "";
+  const callbackId = body?.callback_query?.id;
   const chatId = body?.callback_query?.message?.chat?.id;
   const messageId = body?.callback_query?.message?.message_id;
   const renderMap = {
@@ -5939,15 +5928,30 @@ async function telegramWebhookHandler(req, env) {
     l: renderEmailListMode,
     s: renderEmailSummaryMode
   };
+  const sendAlert = async (text) => {
+    await sendTelegramRequest(TELEGRAM_TOKEN, "answerCallbackQuery", {
+      callback_query_id: callbackId,
+      text,
+      show_alert: true
+    });
+  };
   if (data.startsWith("p:") || data.startsWith("l:") || data.startsWith("s:")) {
     const id = data.substring(2);
     const render2 = renderMap[data[0]];
-    const value = JSON.parse(await DB.get(id));
-    const req2 = await render2(value, env);
-    if (req2) {
-      req2.chat_id = chatId;
-      req2.message_id = messageId;
-      await sendTelegramRequest(TELEGRAM_TOKEN, "editMessageText", req2);
+    const raw = await DB.get(id);
+    if (raw) {
+      try {
+        const value = JSON.parse(raw);
+        const req2 = await render2(value, env);
+        req2.chat_id = chatId;
+        req2.message_id = messageId;
+        await sendTelegramRequest(TELEGRAM_TOKEN, "editMessageText", req2);
+      } catch (e3) {
+        await sendAlert(`Error: ${e3.message}`);
+        return;
+      }
+    } else {
+      await sendAlert("Email not found");
       return;
     }
   }
@@ -5997,6 +6001,7 @@ async function fetchHandler(request, env, ctx) {
     return new Response("It works!");
   });
   return router.handle(request).catch((e3) => {
+    console.error(e3);
     return new Response(e3.message, {
       status: 500
     });
