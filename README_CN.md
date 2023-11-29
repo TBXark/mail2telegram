@@ -71,7 +71,7 @@ mail2telegram
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
 
-> `FORWARD_LIST`中的邮箱地址应该是要在 Email Routing - Destination addresses 中添加认证之后才能收到邮件
+> `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
 
 
 ## 特别说明

@@ -71,7 +71,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 > `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
 
-> The email address in `FORWARD_LIST` should be added to Email Routing - Destination addresses after authentication in order to receive emails.
+> The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
 
 ## Usage
 
