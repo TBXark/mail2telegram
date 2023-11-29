@@ -46,8 +46,13 @@
  * @property {string} callback_query.id
  * @property {string} callback_query.data
  * @property {object} callback_query.message
- * @property {number} callback_query.message.chat.id
+ * @property {number | string} callback_query.message.chat.id
  * @property {number} callback_query.message.message_id
+ * @property {object} message
+ * @property {number| string} message.chat.id
+ * @property {number | string} message.from.id
+ * @property {number} message.message_id
+ * @property {string} message.text
  */
 
 /**

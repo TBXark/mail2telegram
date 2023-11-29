@@ -335,6 +335,19 @@ async function telegramWebhookHandler(req, env) {
    * @type {TelegramWebhookRequest}
    */
   const body = await req.json();
+
+  switch (body?.message?.text) {
+    case '/start':
+    case '/id':
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: body.message.chat.id,
+        text: `Your chat ID is ${body.message.chat.id}`,
+      });
+      return;
+    default:
+      break;
+  }
+
   const data = body?.callback_query?.data || '';
   const callbackId = body?.callback_query?.id;
   const chatId = body?.callback_query?.message?.chat?.id;
@@ -464,6 +477,7 @@ async function emailHandler(message, env, ctx) {
     forward: [],
   };
   if (!canHandleMessage(message, env)) {
+    console.log(`Message ${id} is blocked`);
     return;
   }
   if (isGuardianMode) {

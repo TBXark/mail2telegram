@@ -55,7 +55,7 @@ mail2telegram
 
 | KEY                    | 描述                                                        |
 |------------------------|-----------------------------------------------------------|
-| TELEGRAM_ID            | 你的Telegram ID                                             |
+| TELEGRAM_ID            | 你的Telegram ID, 纯数字可以通过`/id`指令获取                           |
 | TELEGRAM_TOKEN         | Telegram Bot Token                                        |
 | DOMAIN                 | Workers的域名                                                |
 | FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                   |
@@ -70,6 +70,8 @@ mail2telegram
 | DB                     | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`          |
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
+
+> `FORWARD_LIST`中的邮箱地址应该是要在 Email Routing - Destination addresses 中添加认证之后才能收到邮件
 
 
 ## 特别说明
