@@ -246,7 +246,7 @@ async function renderEmailSummaryMode(mail, env) {
  * @param {string} token - The Telegram bot token.
  * @param {string} method - The API method to call.
  * @param {object} body - The JSON body of the request.
- * @return {Promise<void>} A promise that resolves to the response from the API.
+ * @return {Promise<object>} A promise that resolves to the response from the API.
  */
 async function sendTelegramRequest(token, method, body) {
   const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -258,6 +258,7 @@ async function sendTelegramRequest(token, method, body) {
   });
   const result = await resp.json();
   console.log(`Response from Telegram API: ${method}\n${JSON.stringify(result)}`);
+  return result;
 }
 
 
@@ -408,9 +409,10 @@ async function fetchHandler(request, env, ctx) {
   } = env;
 
   router.get('/init', async () => {
-    return sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
+    const resp = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
     });
+    return new Response(JSON.stringify(resp));
   });
 
   router.post('/telegram/:token/webhook', async (req) => {

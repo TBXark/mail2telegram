@@ -49,6 +49,9 @@ mail2telegram
 2. 配置路由 在`Email Routing - Routing Rules` 中 `Catch-all address` 的 action 改成 `Send to a Worker:mail2telegram`。 把所有剩余的邮件都转发到我这个worker。
 3. 如果将`Catch-all address`设置成workers后就没有办法将剩余所有邮件转发到你自己的邮件，如果你需要备份邮件，你只需要在worker环境变量中的`FORWARD_LIST`填入你的备份邮箱即可。
 
+### 3. 绑定Telegram Webhook
+
+调用`https://project_name.user_name.workers.dev/init`即可绑定Webhook，查看返回结果确认绑定状态。
 
 
 ## 配置
@@ -57,7 +60,7 @@ mail2telegram
 |------------------------|-----------------------------------------------------------|
 | TELEGRAM_ID            | 你的Telegram ID, 纯数字可以通过`/id`指令获取                           |
 | TELEGRAM_TOKEN         | Telegram Bot Token                                        |
-| DOMAIN                 | Workers的域名                                                |
+| DOMAIN                 | Workers的域名, 例子: `project_name.user_name.workers.dev`      |
 | FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                   |
 | WHITE_LIST             | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]`           |
 | BLOCK_LIST             | 发件人黑名单，一个正则表达式数组转成字符串                                     |

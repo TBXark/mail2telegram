@@ -146,3 +146,4 @@ dist
 # build
 wrangler.toml
 .idea
+.wrangler

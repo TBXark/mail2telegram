@@ -49,7 +49,9 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 - Configure routing by changing the action of `Catch-all address` in `Email Routing - Routing Rules` to `Send to a Worker:mail2telegram`. Forward all remaining emails to this worker.
 - If you set `Catch-all address` as workers, you won't be able to forward all remaining emails to your own email. If you need to backup emails, simply fill in your backup email in the `FORWARD_LIST` environment variable of the worker.
 
+### 3. Binding a Telegram Webhook
 
+Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, check the return result to confirm the binding status.
 
 ## Configuration
 
@@ -57,7 +59,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 |------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | TELEGRAM_ID            | Your Telegram ID, pure numbers can be obtained through the `/id` command.                                                                            |
 | TELEGRAM_TOKEN         | Telegram Bot Token                                                                                                                                   |
-| DOMAIN                 | Workers domain name                                                                                                                                  |
+| DOMAIN                 | Workers domain name, example: `project_name.user_name.workers.dev`                                                                                   |
 | FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                 |
 | WHITE_LIST             | Sender whitelist, an array of regular expressions converted to a string, example: `[\".*@10086\\\\.cn\"]`                                            |
 | BLOCK_LIST             | Sender blacklist, an array of regular expressions converted to a string                                                                              |
