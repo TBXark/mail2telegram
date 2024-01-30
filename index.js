@@ -31,6 +31,9 @@ async function streamToArrayBuffer(stream, streamSize) {
   let bytesRead = 0;
   const reader = stream.getReader();
   while (true) {
+    if (bytesRead >= streamSize) {
+      break;
+    }
     const {done, value} = await reader.read();
     if (done) {
       break;
@@ -45,9 +48,11 @@ async function streamToArrayBuffer(stream, streamSize) {
  * Parse an email message.
  *
  * @param {EmailMessage} message - The email message to be parsed.
+ * @param {number} maxSize - The maximum size of the email in bytes.
+ * @param {string} maxSizePolicy - The policy of emails that exceed the maximum size.
  * @return {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
  */
-async function parseEmail(message) {
+async function parseEmail(message, maxSize, maxSizePolicy) {
   const id = randomId(32);
   const cache = {
     id: id,
@@ -56,12 +61,36 @@ async function parseEmail(message) {
     to: message.to,
     subject: message.headers.get('Subject'),
   };
+  let bufferSize = message.rawSize;
+  let currentMode = 'untruncate';
+  // let debugMessage = JSON.stringify({
+  //   bufferSize: bufferSize,
+  //   maxSize: maxSize,
+  //   maxSizePolicy: maxSizePolicy,
+  //   result: bufferSize > maxSize,
+  // }, null, 2)
+  if (bufferSize > maxSize ) {
+    switch (maxSizePolicy) {
+      case 'unhandled':
+        cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
+        cache.html = cache.text;
+        // cache.html = debugMessage;
+        return cache;
+      case 'truncate':
+        bufferSize = maxSize;
+        currentMode = 'truncate';
+        break;
+      default:
+        break;
+    }
+  }
   try {
-    const raw = await streamToArrayBuffer(message.raw, message.rawSize);
+    const raw = await streamToArrayBuffer(message.raw, bufferSize);
     const parser = new PostalMime();
     const email = await parser.parse(raw);
     cache.messageId = email.messageId;
     cache.subject = email.subject;
+    // cache.subject += `\n${debugMessage}`
     if (email.html) {
       cache.html = email.html;
     }
@@ -70,8 +99,11 @@ async function parseEmail(message) {
     } else if (email.html) {
       cache.text = convert(email.html, {});
     }
+    if (currentMode === 'truncate') {
+      cache.text += `\n\n[Truncated] The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`
+    }
   } catch (e) {
-    const msg = `Error parsing email: ${e.message}`;
+    // const msg = `Error parsing email: ${e.message}`;
     cache.text = msg;
     cache.html = msg;
   }
@@ -310,10 +342,14 @@ async function sendMailToTelegram(message, env) {
     TELEGRAM_ID,
     MAIL_TTL,
     DB,
+    MAX_EMAIL_SIZE,
+    MAX_EMAIL_SIZE_POLICY,
   } = env;
 
   const ttl = parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
-  const mail = await parseEmail(message);
+  const maxSize = parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
+  const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
+  const mail = await parseEmail(message, maxSize, maxSizePolicy);
   await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
   const req = await renderEmailListMode(mail, env);
   req.chat_id = TELEGRAM_ID;

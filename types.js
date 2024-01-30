@@ -32,6 +32,8 @@
  * @property {string} WHITE_LIST - The list of email addresses to allow.
  * @property {string} MAIL_TTL - The TTL of the email in seconds.
  * @property {string} DOMAIN - The domain name of the service.
+ * @property {string} [MAX_EMAIL_SIZE] - The maximum size of the email in bytes.
+ * @property {string} [MAX_EMAIL_SIZE_POLICY] - The policy of emails that exceed the maximum size.
  * @property {string} [OPENAI_API_KEY] - The OpenAI API key.
  * @property {string} [OPENAI_COMPLETIONS_API] - The OpenAI API  for completions.
  * @property {string} [OPENAI_CHAT_MODEL] - The OpenAI model.

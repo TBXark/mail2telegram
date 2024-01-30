@@ -56,21 +56,23 @@ mail2telegram
 
 ## 配置
 
-| KEY                    | 描述                                                        |
-|------------------------|-----------------------------------------------------------|
-| TELEGRAM_ID            | 你的Telegram ID, 纯数字可以通过`/id`指令获取                           |
-| TELEGRAM_TOKEN         | Telegram Bot Token                                        |
-| DOMAIN                 | Workers的域名, 例子: `project_name.user_name.workers.dev`      |
-| FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                   |
-| WHITE_LIST             | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]`           |
-| BLOCK_LIST             | 发件人黑名单，一个正则表达式数组转成字符串                                     |
-| MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                    |
-| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮            |
-| OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions` |
-| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                               |
-| SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                  |
-| GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                                   |
-| DB                     | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`          |
+| KEY                    | 描述                                                                                                                                                                    |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TELEGRAM_ID            | 你的Telegram ID, 纯数字可以通过`/id`指令获取                                                                                                                                       |
+| TELEGRAM_TOKEN         | Telegram Bot Token                                                                                                                                                    |
+| DOMAIN                 | Workers的域名, 例子: `project_name.user_name.workers.dev`                                                                                                                  |
+| FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                                                                                                                               |
+| WHITE_LIST             | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                                                       |
+| BLOCK_LIST             | 发件人黑名单，一个正则表达式数组转成字符串                                                                                                                                                 |
+| MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                                                                                                                                |
+| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮                                                                                                                        |
+| OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions`                                                                                                             |
+| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                                                                                                                                           |
+| SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                                                                                                                              |
+| GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                                                                                                                                               |
+| MAX_EMAIL_SIZE         | 最大邮件大小，单位字节，超过此大小的邮件将会根据`MAX_EMAIL_SIZE_POLICY`判断处理逻辑。主要作用是防止邮件附件过大导致worker函数超时。默认为512*1024                                                                           |
+| MAX_EMAIL_SIZE_POLICY  | 可选值为`unhandled`,`truncate`,`continute`。 `unhandled`表示不处理只返回邮件头信息不解析邮件正文，`truncate`表示截断邮件正文只解析允许的大小，`continute`表示继续处理不管大小限制。默认为`truncate`。这个策略只影响Telegram推送消息，不影响邮件转发。 |
+| DB                     | 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`                                                                                                                      |
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
 
