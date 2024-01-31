@@ -4,13 +4,13 @@ import './types.js';
 
 
 /**
- * Checks if the given message can be handled based on the environment.
+ * Checks if the given message should be blocked.
  *
  * @param {EmailMessage} message - The message to be checked.
  * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
  * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
-async function canHandleMessage(message, env) {
+async function isMessageBlock(message, env) {
   const loadArrayFromRaw = (raw) => {
     if (!raw) {
       return [];
@@ -65,13 +65,43 @@ async function canHandleMessage(message, env) {
   for (const addr of address) {
     if (!matchAddress(whiteList, addr)) {
       if (matchAddress(blockList, addr)) {
-        return false;
+        return true;
       }
     }
   }
-  return true;
+  return false;
 }
 
+
+/**
+ *
+ * @param {string} id - The ID of the email.
+ * @param {Environment} env - The environment object.
+ * @return {Promise<EmailHandleStatus>} The mail status.
+ */
+async function loadMailStatus(id, env) {
+  const {
+    DB,
+    GUARDIAN_MODE,
+  } = env;
+  const defaultStatus = {
+    telegram: false,
+    forward: [],
+    guardian: false,
+  };
+  if (GUARDIAN_MODE === 'true') {
+    try {
+      return {
+        ...defaultStatus,
+        ...JSON.parse(await DB.get(id)),
+        guardian: true,
+      };
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  return defaultStatus;
+}
 
 /**
  * Handles the fetch request.
@@ -150,32 +180,25 @@ async function fetchHandler(request, env, ctx) {
 async function emailHandler(message, env, ctx) {
   const {
     FORWARD_LIST,
-    GUARDIAN_MODE,
+    BLOCK_POLICY,
     DB,
   } = env;
   const id = message.headers.get('Message-ID');
+  const isBlock = await isMessageBlock(message, env);
+  const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
   const statusTTL = {expirationTtl: 60 * 60};
-  const isGuardianMode = (GUARDIAN_MODE === 'true');
-  let status = {
-    telegram: false,
-    forward: [],
-  };
-  if (!(await canHandleMessage(message, env))) {
-    console.log(`Message ${id} is blocked`);
+  const status = await loadMailStatus(id, env);
+
+  // Reject the email
+  if (isBlock && blockPolicy.includes('reject')) {
+    await message.setReject('Blocked');
     return;
   }
-  if (isGuardianMode) {
-    try {
-      const raw = await DB.get(id);
-      if (raw) {
-        status = JSON.parse(raw);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
+
+  // Forward to email
   try {
-    const forwardList = (FORWARD_LIST || '').split(',');
+    const blockForward = isBlock && blockPolicy.includes('forward');
+    const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
     for (const forward of forwardList) {
       try {
         const add = forward.trim();
@@ -183,7 +206,7 @@ async function emailHandler(message, env, ctx) {
           continue;
         }
         await message.forward(add);
-        if (isGuardianMode) {
+        if (status.guardian) {
           status.forward.push(add);
           await DB.put(id, JSON.stringify(status), statusTTL);
         }
@@ -194,11 +217,14 @@ async function emailHandler(message, env, ctx) {
   } catch (e) {
     console.error(e);
   }
+
+  // Send to Telegram
   try {
-    if (!status.telegram) {
+    const blockTelegram = isBlock && blockPolicy.includes('telegram');
+    if (!status.telegram && !blockTelegram) {
       await sendMailToTelegram(message, env);
     }
-    if (isGuardianMode) {
+    if (status.guardian) {
       status.telegram = true;
       await DB.put(id, JSON.stringify(status), statusTTL);
     }
