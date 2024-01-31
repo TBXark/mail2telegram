@@ -30,6 +30,7 @@
  * @property {string} FORWARD_LIST - The list of email addresses to forward the email to.
  * @property {string} BLOCK_LIST - The list of email addresses to block.
  * @property {string} WHITE_LIST - The list of email addresses to allow.
+ * @property {string} LOAD_REGEX_FROM_DB - Whether to load the regex from the database.
  * @property {string} MAIL_TTL - The TTL of the email in seconds.
  * @property {string} DOMAIN - The domain name of the service.
  * @property {string} [MAX_EMAIL_SIZE] - The maximum size of the email in bytes.

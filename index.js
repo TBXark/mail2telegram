@@ -2,31 +2,39 @@ import {Router} from 'itty-router';
 import {sendMailToTelegram, sendTelegramRequest, telegramWebhookHandler} from './telegram.js';
 import './types.js';
 
+
 /**
  * Checks if the given message can be handled based on the environment.
  *
  * @param {EmailMessage} message - The message to be checked.
  * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
- * @return {boolean} - Returns true if the message can be handled, false otherwise.
+ * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
-function canHandleMessage(message, env) {
-  const {
-    BLOCK_LIST,
-    WHITE_LIST,
-  } = env;
-  const matchAddress = (raw, address) => {
+async function canHandleMessage(message, env) {
+  const loadArrayFromRaw = (raw) => {
     if (!raw) {
-      return false;
+      return [];
     }
     let list = [];
     try {
       list = JSON.parse(raw);
     } catch (e) {
-      return false;
+      return [];
     }
     if (!Array.isArray(list)) {
-      return false;
+      return [];
     }
+    return list;
+  };
+  const loadArrayFromDB = async (db, key) => {
+    try {
+      const raw = await db.get(key);
+      return loadArrayFromRaw(raw);
+    } catch (e) {
+      return [];
+    }
+  };
+  const matchAddress = (list, address) => {
     for (const item of list) {
       const regex = new RegExp(item);
       if (regex.test(address)) {
@@ -35,7 +43,18 @@ function canHandleMessage(message, env) {
     }
     return false;
   };
-
+  const {
+    BLOCK_LIST,
+    WHITE_LIST,
+    LOAD_REGEX_FROM_DB,
+    DB,
+  } = env;
+  const blockList = loadArrayFromRaw(BLOCK_LIST);
+  const whiteList = loadArrayFromRaw(WHITE_LIST);
+  if (LOAD_REGEX_FROM_DB === 'true') {
+    blockList.push(...(await loadArrayFromDB(DB, 'BLOCK_LIST')));
+    whiteList.push(...(await loadArrayFromDB(DB, 'WHITE_LIST')));
+  }
   const address = [];
   if (message.from) {
     address.push(message.from);
@@ -44,8 +63,8 @@ function canHandleMessage(message, env) {
     address.push(message.to);
   }
   for (const addr of address) {
-    if (!matchAddress(WHITE_LIST, addr)) {
-      if (matchAddress(BLOCK_LIST, addr)) {
+    if (!matchAddress(whiteList, addr)) {
+      if (matchAddress(blockList, addr)) {
         return false;
       }
     }
@@ -141,7 +160,7 @@ async function emailHandler(message, env, ctx) {
     telegram: false,
     forward: [],
   };
-  if (!canHandleMessage(message, env)) {
+  if (!(await canHandleMessage(message, env))) {
     console.log(`Message ${id} is blocked`);
     return;
   }

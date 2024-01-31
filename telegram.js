@@ -60,11 +60,12 @@ export async function sendMailToTelegram(message, env) {
 async function telegramCommandHandler(message, env) {
   const {
     TELEGRAM_TOKEN,
+    TELEGRAM_ID,
   } = env;
-  const idCommand = async () => {
+  const idCommand = async (msg) => {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-      chat_id: message.chat.id,
-      text: `Your chat ID is ${message.chat.id}`,
+      chat_id: msg.chat.id,
+      text: `Your chat ID is ${msg.chat.id}`,
     });
   };
   const handlers = {
@@ -73,11 +74,109 @@ async function telegramCommandHandler(message, env) {
   };
   for (const key in handlers) {
     if (message.text.startsWith(`/${key}`)) {
-      await handlers[key]();
+      await handlers[key](message);
+      return;
+    }
+  }
+  const authHandlers = {
+    add_white: addAddressToDB('white', 'WHITE_LIST', env),
+    remove_white: removeAddressFromDB('white', 'WHITE_LIST', env),
+    list_white: listAddressesFromDB('white', 'WHITE_LIST', env),
+    add_block: addAddressToDB('block', 'BLOCK_LIST', env),
+    remove_block: removeAddressFromDB('block', 'BLOCK_LIST', env),
+    list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
+  };
+  for (const key in authHandlers) {
+    if (message.text.startsWith(`/${key}`)) {
+      if (`${message.chat.id}` !== TELEGRAM_ID) {
+        await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+          chat_id: message.chat.id,
+          text: 'You are not authorized to use this command.',
+        });
+        return;
+      }
+      await authHandlers[key](message);
       return;
     }
   }
 }
+
+/**
+ * Add an address to the database.
+ * @param {string} command - The command name.
+ * @param {string} key - The key of the database.
+ * @param {Environment} env - The environment object.
+ * @return {(function(TelegramMessage): Promise<void>)}
+ */
+function addAddressToDB(command, key, env) {
+  return async (msg) => {
+    const {
+      TELEGRAM_TOKEN,
+      DB,
+    } = env;
+    const address = msg.text.substring(`/add_${command} `.length);
+    const list =JSON.parse(await DB.get(key) || '[]');
+    if (!list.includes(address)) {
+      list.push(address);
+      await DB.put(key, JSON.stringify(list));
+    }
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: `Added ${address} to ${key}`,
+      disable_web_page_preview: true,
+    });
+  };
+}
+
+/**
+ * Remove an address from the database.
+ * @param {string} command - The command name.
+ * @param {string} key - The key of the database.
+ * @param {Environment} env - The environment object.
+ * @return {(function(TelegramMessage): Promise<void>)}
+ */
+function removeAddressFromDB(command, key, env) {
+  return async (msg) => {
+    const {
+      TELEGRAM_TOKEN,
+      DB,
+    } = env;
+    const address = msg.text.substring(`/remove_${command} `.length);
+    const list =JSON.parse(await DB.get(key) || '[]');
+    if (list.includes(address)) {
+      list.splice(list.indexOf(address), 1);
+      await DB.put(key, JSON.stringify(list));
+    }
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: `Removed ${address} from ${key}`,
+      disable_web_page_preview: true,
+    });
+  };
+}
+
+/**
+ * List addresses from the database.
+ * @param {string} command - The command name.
+ * @param {string} key - The key of the database.
+ * @param {Environment} env - The environment object.
+ * @return {(function(TelegramMessage): Promise<void>)}
+ */
+function listAddressesFromDB(command, key, env) {
+  return async (msg) => {
+    const {
+      TELEGRAM_TOKEN,
+      DB,
+    } = env;
+    const list =JSON.parse(await DB.get(key) || '[]');
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: `List of ${key}:\n${list.join('\n')}`,
+      disable_web_page_preview: true,
+    });
+  };
+}
+
 
 /**
  * Handles the incoming Telegram callback.
