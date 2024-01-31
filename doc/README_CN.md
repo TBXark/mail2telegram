@@ -4,7 +4,7 @@ mail2telegram
 </h1>
 
 <p align="center">
-    <br> <a href="README.md">English</a> | 中文
+    <br> <a href="../README.md">English</a> | 中文
 </p>
 <p align="center">
     <em>使用Telegram机器人获取您的临时电子邮件..</em>
@@ -38,7 +38,7 @@ mail2telegram
 
 #### 1.2 使用复制粘贴部署
 
-- 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](./build/index.js)
+- 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](../build/index.js)
 - 使用复制粘贴部署需要手动在项目配置页面设置环境变量
 -  需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
@@ -110,5 +110,5 @@ To: [recipient]
 
 ## 许可证
 
-**mail2telegram** 以 MIT 许可证发布。[详见 LICENSE](LICENSE) 获取详情。
+**mail2telegram** 以 MIT 许可证发布。[详见 LICENSE](../LICENSE) 获取详情。
 

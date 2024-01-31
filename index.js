@@ -1,107 +1,8 @@
 import {Router} from 'itty-router';
-import {sendMailToTelegram, sendTelegramRequest, telegramWebhookHandler} from './telegram.js';
-import './types.js';
+import {sendMailToTelegram, sendTelegramRequest, telegramWebhookHandler} from './src/telegram.js';
+import {isMessageBlock, loadMailCache, loadMailStatus} from './src/dao.js';
+import './src/types.js';
 
-
-/**
- * Checks if the given message should be blocked.
- *
- * @param {EmailMessage} message - The message to be checked.
- * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
- * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
- */
-async function isMessageBlock(message, env) {
-  const loadArrayFromRaw = (raw) => {
-    if (!raw) {
-      return [];
-    }
-    let list = [];
-    try {
-      list = JSON.parse(raw);
-    } catch (e) {
-      return [];
-    }
-    if (!Array.isArray(list)) {
-      return [];
-    }
-    return list;
-  };
-  const loadArrayFromDB = async (db, key) => {
-    try {
-      const raw = await db.get(key);
-      return loadArrayFromRaw(raw);
-    } catch (e) {
-      return [];
-    }
-  };
-  const matchAddress = (list, address) => {
-    for (const item of list) {
-      const regex = new RegExp(item);
-      if (regex.test(address)) {
-        return true;
-      }
-    }
-    return false;
-  };
-  const {
-    BLOCK_LIST,
-    WHITE_LIST,
-    LOAD_REGEX_FROM_DB,
-    DB,
-  } = env;
-  const blockList = loadArrayFromRaw(BLOCK_LIST);
-  const whiteList = loadArrayFromRaw(WHITE_LIST);
-  if (LOAD_REGEX_FROM_DB === 'true') {
-    blockList.push(...(await loadArrayFromDB(DB, 'BLOCK_LIST')));
-    whiteList.push(...(await loadArrayFromDB(DB, 'WHITE_LIST')));
-  }
-  const address = [];
-  if (message.from) {
-    address.push(message.from);
-  }
-  if (message.to) {
-    address.push(message.to);
-  }
-  for (const addr of address) {
-    if (!matchAddress(whiteList, addr)) {
-      if (matchAddress(blockList, addr)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-
-/**
- *
- * @param {string} id - The ID of the email.
- * @param {Environment} env - The environment object.
- * @return {Promise<EmailHandleStatus>} The mail status.
- */
-async function loadMailStatus(id, env) {
-  const {
-    DB,
-    GUARDIAN_MODE,
-  } = env;
-  const defaultStatus = {
-    telegram: false,
-    forward: [],
-    guardian: false,
-  };
-  if (GUARDIAN_MODE === 'true') {
-    try {
-      return {
-        ...defaultStatus,
-        ...JSON.parse(await DB.get(id)),
-        guardian: true,
-      };
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  return defaultStatus;
-}
 
 /**
  * Handles the fetch request.
@@ -142,7 +43,7 @@ async function fetchHandler(request, env, ctx) {
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
-    const value = JSON.parse(await DB.get(id));
+    const value = await loadMailCache(id, DB);
     const headers = {};
     switch (mode) {
       case 'html':
@@ -181,13 +82,15 @@ async function emailHandler(message, env, ctx) {
   const {
     FORWARD_LIST,
     BLOCK_POLICY,
+    GUARDIAN_MODE,
     DB,
   } = env;
   const id = message.headers.get('Message-ID');
   const isBlock = await isMessageBlock(message, env);
+  const isGuardian = GUARDIAN_MODE === 'true';
   const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
   const statusTTL = {expirationTtl: 60 * 60};
-  const status = await loadMailStatus(id, env);
+  const status = await loadMailStatus(id, isGuardian, DB);
 
   // Reject the email
   if (isBlock && blockPolicy.includes('reject')) {
@@ -206,7 +109,7 @@ async function emailHandler(message, env, ctx) {
           continue;
         }
         await message.forward(add);
-        if (status.guardian) {
+        if (isGuardian) {
           status.forward.push(add);
           await DB.put(id, JSON.stringify(status), statusTTL);
         }
@@ -224,7 +127,7 @@ async function emailHandler(message, env, ctx) {
     if (!status.telegram && !blockTelegram) {
       await sendMailToTelegram(message, env);
     }
-    if (status.guardian) {
+    if (isGuardian) {
       status.telegram = true;
       await DB.put(id, JSON.stringify(status), statusTTL);
     }

@@ -4,7 +4,7 @@ mail2telegram
 </h1>
 
 <p align="center">
-    <br> English | <a href="README_CN.md">中文</a>
+    <br> English | <a href="doc/README_CN.md">中文</a>
 </p>
 <p align="center">
     <em>Use Telegram Bot to get your temporary email..</em>
@@ -15,7 +15,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 <details>
 <summary>Click to view the demo.</summary>
-<img style="max-width: 600px;" alt="image" src="example.png">
+<img style="max-width: 600px;" alt="image" src="doc/example.png">
 </details>
 
 

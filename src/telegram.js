@@ -1,6 +1,7 @@
 import {renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode} from './render.js';
 import {parseEmail} from './parse.js';
 import './types.js';
+import {loadArrayFromDB, loadMailCache} from './dao.js';
 
 /**
  * Sends a Telegram API request.
@@ -115,7 +116,7 @@ function addAddressToDB(command, key, env) {
       DB,
     } = env;
     const address = msg.text.substring(`/add_${command} `.length);
-    const list =JSON.parse(await DB.get(key) || '[]');
+    const list = await loadArrayFromDB(DB, key);
     if (!list.includes(address)) {
       list.push(address);
       await DB.put(key, JSON.stringify(list));
@@ -142,7 +143,7 @@ function removeAddressFromDB(command, key, env) {
       DB,
     } = env;
     const address = msg.text.substring(`/remove_${command} `.length);
-    const list =JSON.parse(await DB.get(key) || '[]');
+    const list = await loadArrayFromDB(DB, key);
     if (list.includes(address)) {
       list.splice(list.indexOf(address), 1);
       await DB.put(key, JSON.stringify(list));
@@ -168,7 +169,7 @@ function listAddressesFromDB(command, key, env) {
       TELEGRAM_TOKEN,
       DB,
     } = env;
-    const list =JSON.parse(await DB.get(key) || '[]');
+    const list = await loadArrayFromDB(DB, key);
     await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
       chat_id: msg.chat.id,
       text: `List of ${key}:\n${list.join('\n')}`,
@@ -211,13 +212,9 @@ async function telegramCallbackHandler(callback, env) {
   if (Object.keys(renderMap).map((k) => data.startsWith(`${k}:`)).includes(true)) {
     const id = data.substring(2);
     const render = renderMap[data[0]];
-    const raw = await DB.get(id);
-    if (raw) {
+    const value = await loadMailCache(id, DB);
+    if (value) {
       try {
-        /**
-         * @type {EmailCache}
-         */
-        const value = JSON.parse(raw);
         const req = await render(value, env);
         req.chat_id = chatId;
         req.message_id = messageId;

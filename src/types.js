@@ -13,7 +13,6 @@
 /**
  * @typedef {object} EmailHandleStatus
  * @property {boolean} [telegram] - Did forwarding to Telegram succeed?
- * @property {boolean} guardian - Whether to enable guardian mode
  * @property {Array<string>} [forward] - The email addresses to forward the email to.
  */
 
