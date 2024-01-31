@@ -43,18 +43,25 @@
  */
 
 /**
+ * @typedef {object} TelegramMessage
+ * @property {number| string} chat.id
+ * @property {number | string} from.id
+ * @property {number} message_id
+ * @property {string} text
+ *
+ */
+
+/**
+ * @typedef {object} TelegramCallbackQuery
+ * @property {string} id
+ * @property {string} data
+ * @property {TelegramMessage} message
+ */
+
+/**
  * @typedef {object} TelegramWebhookRequest
- * @property {object} callback_query
- * @property {string} callback_query.id
- * @property {string} callback_query.data
- * @property {object} callback_query.message
- * @property {number | string} callback_query.message.chat.id
- * @property {number} callback_query.message.message_id
- * @property {object} message
- * @property {number| string} message.chat.id
- * @property {number | string} message.from.id
- * @property {number} message.message_id
- * @property {string} message.text
+ * @property {TelegramMessage} [message]
+ * @property {TelegramCallbackQuery} [callback_query]
  */
 
 /**
