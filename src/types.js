@@ -1,4 +1,3 @@
-
 /**
  * @typedef {object} EmailMessage
  * @property {string} from - The sender of the email.
@@ -10,6 +9,7 @@
  * @property {function(string, Headers?): Promise<void>} forward - Forward the email to the specified recipient.
  * @property {function(EmailMessage): Promise<void>} reply - Reply the email to the sender.
  */
+
 /**
  * @typedef {object} EmailHandleStatus
  * @property {boolean} [telegram] - Did forwarding to Telegram succeed?
@@ -76,7 +76,6 @@
  * @property {string} [html] - The HTML content of the email.
  * @property {string} [text] - The text content of the email.
  */
-
 
 /**
  * @typedef {object} TelegramInlineKeyboardButton
