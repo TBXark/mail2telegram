@@ -250,3 +250,44 @@ export async function telegramWebhookHandler(req, env) {
     await telegramCallbackHandler(body?.callback_query, env);
   }
 }
+
+/**
+ * Bind telegram commands.
+ * @param {string} token
+ * @return {Promise<any>}
+ */
+export async function setMyCommands(token) {
+  const body = {
+    commands: [
+      {
+        command: 'id',
+        description: '/id - Get your chat ID',
+      },
+      {
+        command: 'add_white',
+        description: '/add_white <email> - Add an email address to the white list',
+      },
+      {
+        command: 'remove_white',
+        description: '/remove_white <email> - Remove an email address from the white list',
+      },
+      {
+        command: 'list_white',
+        description: '/list_white - List the email addresses in the white list',
+      },
+      {
+        command: 'add_block',
+        description: '/add_block <email> - Add an email address to the block list',
+      },
+      {
+        command: 'remove_block',
+        description: '/remove_block <email> - Remove an email address from the block list',
+      },
+      {
+        command: 'list_block',
+        description: '/list_block - List the email addresses in the block list',
+      },
+    ],
+  };
+  return await sendTelegramRequest(token, 'setMyCommands', body);
+}

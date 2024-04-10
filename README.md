@@ -77,6 +77,21 @@ Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, chec
 
 > The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
 
+## Commands
+
+| Command                 | Description                                 |
+|-------------------------|---------------------------------------------|
+| `/id`                   | Get your chat ID                            |
+| `/add_white <email>`    | Add an email address to the white list      |
+| `/remove_white <email>` | Remove an email address from the white list |
+| `/list_white`           | List the email addresses in the white list  |
+| `/add_block <email>`    | Add an email address to the block list      |
+| `/remove_block <email>` | Remove an email address from the block list |
+| `/list_block`           | List the email addresses in the block list  |
+
+> Using the command requires re-calling the `/init` interface to bind the instruction.
+
+
 ## Usage
 
 

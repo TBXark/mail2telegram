@@ -79,6 +79,20 @@ mail2telegram
 > `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
 
 
+## Commands
+
+| Command                 | Description      |
+|-------------------------|------------------|
+| `/id`                   | 获取您的聊天ID         |
+| `/add_white <email>`    | 将电子邮件地址添加到白名单。   |
+| `/remove_white <email>` | 从白名单中删除一个电子邮件地址。 |
+| `/list_white`           | 列出白名单中的电子邮件地址。   |
+| `/add_block <email>`    | 将电子邮件地址添加到阻止列表中。 |
+| `/remove_block <email>` | 从阻止列表中删除电子邮件地址。  |
+| `/list_block`           | 列出阻止列表中的电子邮件地址。  |
+
+> 使用命令需要重新调用 `/init` 接口绑定指令
+
 ## 特别说明
 
 默认消息结构如下

@@ -1,5 +1,5 @@
 import {Router} from 'itty-router';
-import {sendMailToTelegram, sendTelegramRequest, telegramWebhookHandler} from './src/telegram.js';
+import {sendMailToTelegram, sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './src/telegram.js';
 import {isMessageBlock, loadMailCache, loadMailStatus} from './src/dao.js';
 import './src/types.js';
 
@@ -22,10 +22,11 @@ async function fetchHandler(request, env, ctx) {
   } = env;
 
   router.get('/init', async () => {
-    const resp = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
+    const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
     });
-    return new Response(JSON.stringify(resp));
+    const commands = await setMyCommands(TELEGRAM_TOKEN);
+    return new Response(JSON.stringify({webhook, commands}));
   });
 
   router.post('/telegram/:token/webhook', async (req) => {
