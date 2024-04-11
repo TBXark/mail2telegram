@@ -115,7 +115,14 @@ function addAddressToDB(command, key, env) {
       TELEGRAM_TOKEN,
       DB,
     } = env;
-    const address = msg.text.substring(`/add_${command} `.length);
+    const address = msg.text.substring(`/add_${command} `.length).trim();
+    if (!address) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: `Please provide an email address. Example: /add_${command} example@mail.com`,
+      });
+      return;
+    }
     const list = await loadArrayFromDB(DB, key);
     if (!list.includes(address)) {
       list.push(address);
@@ -142,7 +149,14 @@ function removeAddressFromDB(command, key, env) {
       TELEGRAM_TOKEN,
       DB,
     } = env;
-    const address = msg.text.substring(`/remove_${command} `.length);
+    const address = msg.text.substring(`/remove_${command} `.length).trim();
+    if (!address) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: `Please provide an email address. Example: /remove_${command} example@mail.com`,
+      });
+      return;
+    }
     const list = await loadArrayFromDB(DB, key);
     if (list.includes(address)) {
       list.splice(list.indexOf(address), 1);
