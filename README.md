@@ -40,6 +40,7 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 - If you don't want to deploy using the command line and prefer to copy and paste, you can use the precompiled version > [`index.js`](./build/index.js)
 - When deploying via copy and paste, you need to manually set environment variables in the project's configuration page.
+- Bind `KV Namespace Bindings` database to worker with the name `DB`
 - To generate a whitelist/blacklist of regular expressions as a JSON array string, you can use this small tool which also includes some demos: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 

@@ -40,7 +40,8 @@ mail2telegram
 
 - 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](../build/index.js)
 - 使用复制粘贴部署需要手动在项目配置页面设置环境变量
--  需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
+- 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`
+- 需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 
 ### 2. 配置Cloudflare Email Routing
