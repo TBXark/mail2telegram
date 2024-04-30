@@ -118,6 +118,7 @@ function renderEmailDetail(text, id) {
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
  * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object. */
+// eslint-disable-next-line no-unused-vars
 export async function renderEmailPreviewMode(mail, env) {
   return renderEmailDetail(mail.text.substring(0, 4096), mail.id);
 }

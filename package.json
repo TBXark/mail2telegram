@@ -15,7 +15,7 @@
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
     "build": "esbuild index.js --bundle --minify --outfile=./build/index.js --format=esm",
-    "lint": "eslint --fix ."
+    "lint": "eslint --fix index.js src"
   },
   "license": "MIT",
   "dependencies": {
@@ -24,8 +24,9 @@
     "postal-mime": "^2.0.1"
   },
   "devDependencies": {
-    "eslint": ">=5.16.0",
-    "eslint-config-google": "^0.14.0",
+    "@eslint/js": "^9.1.1",
+    "eslint": "^9.1.1",
+    "globals": "^15.1.0",
     "wrangler": "^3.0.0"
   },
   "files": [

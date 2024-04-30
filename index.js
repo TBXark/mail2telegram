@@ -12,8 +12,9 @@ import './src/types.js';
  * @param {object} ctx - The context object.
  * @return {Promise<Response>} The fetch response.
  */
+// eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
-  // eslint-disable-next-line
+   
   const router = Router();
   const {
     TELEGRAM_TOKEN,
@@ -79,6 +80,7 @@ async function fetchHandler(request, env, ctx) {
  * @param {object} ctx - The context object.
  * @return {Promise<void>} - A promise that resolves when the email is processed.
  */
+// eslint-disable-next-line no-unused-vars
 async function emailHandler(message, env, ctx) {
   const {
     FORWARD_LIST,
