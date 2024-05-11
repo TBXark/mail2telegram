@@ -57,10 +57,18 @@ export async function isMessageBlock(message, env) {
   const res = await checkAddressStatus(addresses, env);
   for (const key in res) {
     switch (res[key]) {
-      case 'block':
-        return true;
       case 'white':
+        console.log(`Matched white list: ${key}`);  
         return false;
+      default:
+        break;
+    }
+  }
+  for (const key in res) {
+    switch (res[key]) {
+      case 'block':
+        console.log(`Matched block list: ${key}`);
+        return true;
       default:
         break;
     }
