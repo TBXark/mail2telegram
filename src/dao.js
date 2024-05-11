@@ -4,7 +4,7 @@ import './types.js';
  * Parse json string to array.
  *
  * @param {string} raw - The raw string.
- * @return {*[]}
+ * @return {string[]} The parsed array.
  */
 function loadArrayFromRaw(raw) {
   if (!raw) {
@@ -47,8 +47,42 @@ export async function loadArrayFromDB(db, key) {
  * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
 export async function isMessageBlock(message, env) {
+  const addresses = [];
+  if (message.from) {
+    addresses.push(`${message.from}`);
+  }
+  if (message.to) {
+    addresses.push(`${message.to}`);
+  }
+  const res = await checkAddressStatus(addresses, env);
+  for (const key in res) {
+    switch (res[key]) {
+      case 'block':
+        return true;
+      case 'white':
+        return false;
+      default:
+        break;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks the status of an address by matching it against block and white lists.
+ * @param {string[]} addresses - The address to be checked.
+ * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
+ * @returns {object} - An object containing the status of the address.
+ */
+export async function checkAddressStatus(addresses, env) {
   const matchAddress = (list, address) => {
     for (const item of list) {
+      if (!item) {
+        continue;
+      }
+      if (item === address) {
+        return true;
+      }
       const regex = new RegExp(item);
       if (regex.test(address)) {
         return true;
@@ -68,21 +102,20 @@ export async function isMessageBlock(message, env) {
     blockList.push(...(await loadArrayFromDB(DB, 'BLOCK_LIST')));
     whiteList.push(...(await loadArrayFromDB(DB, 'WHITE_LIST')));
   }
-  const address = [];
-  if (message.from) {
-    address.push(message.from);
-  }
-  if (message.to) {
-    address.push(message.to);
-  }
-  for (const addr of address) {
-    if (!matchAddress(whiteList, addr)) {
-      if (matchAddress(blockList, addr)) {
-        return true;
-      }
+  const result = {}
+  
+  for (const addr of addresses) {
+    if (matchAddress(whiteList, addr)) {
+      result[addr] = 'white';
+      continue;
     }
+    if (matchAddress(blockList, addr)) {
+      result[addr] = 'block';
+      continue;
+    }
+    result[addr] = 'none';
   }
-  return false;
+  return result;
 }
 
 /**

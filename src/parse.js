@@ -30,6 +30,7 @@ async function streamToArrayBuffer(stream, streamSize) {
   const result = new Uint8Array(streamSize);
   let bytesRead = 0;
   const reader = stream.getReader();
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (bytesRead >= streamSize) {
       break;

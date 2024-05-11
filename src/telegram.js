@@ -1,7 +1,7 @@
-import {renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode} from './render.js';
+import {renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode,renderEmailDebugMode} from './render.js';
 import {parseEmail} from './parse.js';
 import './types.js';
-import {loadArrayFromDB, loadMailCache} from './dao.js';
+import {checkAddressStatus, loadArrayFromDB, loadMailCache} from './dao.js';
 
 /**
  * Sends a Telegram API request.
@@ -86,6 +86,7 @@ async function telegramCommandHandler(message, env) {
     add_block: addAddressToDB('block', 'BLOCK_LIST', env),
     remove_block: removeAddressFromDB('block', 'BLOCK_LIST', env),
     list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
+    test: testAddress(message, env),
   };
   for (const key in authHandlers) {
     if (message.text.startsWith(`/${key}`)) {
@@ -99,6 +100,28 @@ async function telegramCommandHandler(message, env) {
       await authHandlers[key](message);
       return;
     }
+  }
+}
+
+
+/**
+ * Test the address by checking its status and send the result to Telegram.
+ * @param {Object} message - The message object received from Telegram.
+ * @param {Object} env - The environment object containing configuration variables.
+ * @returns {Function} - An async function that takes a message object and performs the address test.
+ */
+function testAddress(message, env) {
+  return async (msg) => {
+    // /test abc@def.com
+    const address = message.text.substring('/test '.length).trim();
+    if (!address) {
+      return;
+    }
+    const res = await checkAddressStatus([address], env);
+    await sendTelegramRequest(env.TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: `Address: ${address}\nResult: ${JSON.stringify(res, null, 2)}`,
+    });
   }
 }
 
@@ -215,6 +238,7 @@ async function telegramCallbackHandler(callback, env) {
     p: renderEmailPreviewMode,
     l: renderEmailListMode,
     s: renderEmailSummaryMode,
+    d: renderEmailDebugMode,
   };
   const sendAlert = async (text) => {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'answerCallbackQuery', {
@@ -276,6 +300,10 @@ export async function setMyCommands(token) {
       {
         command: 'id',
         description: '/id - Get your chat ID',
+      },
+      {
+        command: 'test',
+        description: '/test <email> - Test an email address',
       },
       {
         command: 'add_white',

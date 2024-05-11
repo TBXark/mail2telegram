@@ -1,4 +1,5 @@
 import './types.js';
+import {checkAddressStatus} from './dao.js';
 
 /**
  * Sends a request to the OpenAI API and returns the first choice.
@@ -44,6 +45,7 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
  */
 export async function renderEmailListMode(mail, env) {
   const {
+    DEBUG,
     OPENAI_API_KEY,
     DOMAIN,
   } = env;
@@ -63,10 +65,6 @@ To\t\t:\t${mail.to}
       callback_data: `p:${mail.id}`,
     },
     {
-      text: 'Summary',
-      callback_data: `s:${mail.id}`,
-    },
-    {
       text: 'Text',
       url: preview,
     },
@@ -76,8 +74,17 @@ To\t\t:\t${mail.to}
     },
   ];
 
-  if (!OPENAI_API_KEY) {
-    keyboard.splice(1, 1);
+  if (OPENAI_API_KEY) {
+    keyboard.splice(1, 0, {
+      text: 'Summary',
+      callback_data: `s:${mail.id}`,
+    });
+  }
+  if (DEBUG === 'true') {
+    keyboard.push({
+      text: 'Debug',
+      callback_data: `d:${mail.id}`,
+    });
   }
   return {
     text: text,
@@ -144,4 +151,31 @@ export async function renderEmailSummaryMode(mail, env) {
   const prompt = `Summarize the following text in approximately 50 words with ${targetLang}\n\n${mail.text}`;
   req.text = await sendOpenAIRequest(key, endpoint, model, prompt);
   return req;
+}
+
+
+/**
+ * Render the email debug  mode.
+ *
+ * @param {EmailCache} mail - The email object.
+ * @param {Environment} env - The environment object.
+ * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ */
+export async function renderEmailDebugMode(mail, env) {
+  const addresses = [];
+  if (mail.from) {
+    addresses.push(`${mail.from}`);
+  }
+  if (mail.to) {
+    addresses.push(`${mail.to}`);
+  }
+  const res = await checkAddressStatus(addresses, env);
+  const obj = {
+    ...mail,
+    block: res,
+  };
+  delete obj.html;
+  delete obj.text;
+  const text = JSON.stringify(obj, null, 2);
+  return renderEmailDetail(text, mail.id);
 }

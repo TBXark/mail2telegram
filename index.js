@@ -97,7 +97,7 @@ async function emailHandler(message, env, ctx) {
 
   // Reject the email
   if (isBlock && blockPolicy.includes('reject')) {
-    await message.setReject('Blocked');
+    message.setReject('Blocked');
     return;
   }
 

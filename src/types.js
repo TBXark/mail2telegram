@@ -42,6 +42,7 @@
  * @property {string} [SUMMARY_TARGET_LANG] - The target language of the summary.
  * @property {string} [GUARDIAN_MODE] - Whether to enable guardian mode.
  * @property {Database} DB - The database object.
+ * @property {string} [DEBUG] - Whether to enable debug mode.
  */
 
 /**
