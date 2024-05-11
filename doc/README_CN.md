@@ -93,6 +93,8 @@ mail2telegram
 | `/add_block <email>`    | 将电子邮件地址添加到阻止列表中。 |
 | `/remove_block <email>` | 从阻止列表中删除电子邮件地址。  |
 | `/list_block`           | 列出阻止列表中的电子邮件地址。  |
+| `/test <email>`         | 测试电子邮件地址是否在白名单或阻止列表中。 |
+
 
 > 使用命令需要重新调用 `/init` 接口绑定指令
 

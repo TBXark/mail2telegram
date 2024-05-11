@@ -91,6 +91,7 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 | `/add_block <email>`    | Add an email address to the block list      |
 | `/remove_block <email>` | Remove an email address from the block list |
 | `/list_block`           | List the email addresses in the block list  |
+| `/test <email>`         | Test the email address                      |
 
 > Using the command requires re-calling the `/init` interface to bind the instruction.
 
