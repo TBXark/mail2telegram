@@ -115,6 +115,10 @@ function testAddress(message, env) {
     // /test abc@def.com
     const address = message.text.substring('/test '.length).trim();
     if (!address) {
+      await sendTelegramRequest(env.TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: `Please provide an email address. Example: /test example@mail.com`,
+      });
       return;
     }
     const res = await checkAddressStatus([address], env);

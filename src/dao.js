@@ -47,13 +47,10 @@ export async function loadArrayFromDB(db, key) {
  * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
 export async function isMessageBlock(message, env) {
-  const addresses = [];
-  if (message.from) {
-    addresses.push(`${message.from}`);
-  }
-  if (message.to) {
-    addresses.push(`${message.to}`);
-  }
+  const addresses = [
+    message.from,
+    message.to
+  ];
   const res = await checkAddressStatus(addresses, env);
   for (const key in res) {
     switch (res[key]) {
@@ -113,6 +110,9 @@ export async function checkAddressStatus(addresses, env) {
   const result = {}
   
   for (const addr of addresses) {
+    if (!addr) {
+      continue;
+    }
     if (matchAddress(whiteList, addr)) {
       result[addr] = 'white';
       continue;
@@ -121,7 +121,7 @@ export async function checkAddressStatus(addresses, env) {
       result[addr] = 'block';
       continue;
     }
-    result[addr] = 'none';
+    result[addr] = 'no_match';
   }
   return result;
 }

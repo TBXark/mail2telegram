@@ -162,13 +162,10 @@ export async function renderEmailSummaryMode(mail, env) {
  * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
  */
 export async function renderEmailDebugMode(mail, env) {
-  const addresses = [];
-  if (mail.from) {
-    addresses.push(`${mail.from}`);
-  }
-  if (mail.to) {
-    addresses.push(`${mail.to}`);
-  }
+  const addresses = [
+    mail.from,
+    mail.to
+  ];
   const res = await checkAddressStatus(addresses, env);
   const obj = {
     ...mail,
