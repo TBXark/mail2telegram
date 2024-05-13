@@ -1,7 +1,7 @@
-import {renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode,renderEmailDebugMode} from './render.js';
-import {parseEmail} from './parse.js';
+import { renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode, renderEmailDebugMode } from './render.js';
+import { parseEmail } from './parse.js';
 import './types.js';
-import {checkAddressStatus, loadArrayFromDB, loadMailCache} from './dao.js';
+import { checkAddressStatus, loadArrayFromDB, loadMailCache } from './dao.js';
 
 /**
  * Sends a Telegram API request.
@@ -45,7 +45,7 @@ export async function sendMailToTelegram(message, env) {
   const maxSize = parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
   const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
   const mail = await parseEmail(message, maxSize, maxSizePolicy);
-  await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
+  await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
   const req = await renderEmailListMode(mail, env);
   req.chat_id = TELEGRAM_ID;
   await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', req);
@@ -69,6 +69,7 @@ async function telegramCommandHandler(message, env) {
       text: `Your chat ID is ${msg.chat.id}`,
     });
   };
+  const noArgCommands = ['id', 'start', 'list_white', 'list_block'];
   const handlers = {
     id: idCommand,
     start: idCommand,
@@ -80,16 +81,23 @@ async function telegramCommandHandler(message, env) {
     }
   }
   const authHandlers = {
-    add_white: addAddressToDB('white', 'WHITE_LIST', env),
-    remove_white: removeAddressFromDB('white', 'WHITE_LIST', env),
-    list_white: listAddressesFromDB('white', 'WHITE_LIST', env),
-    add_block: addAddressToDB('block', 'BLOCK_LIST', env),
-    remove_block: removeAddressFromDB('block', 'BLOCK_LIST', env),
-    list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
+    // white list
+    add_white: isAddressToDBEnabled(env, addAddressToDB('white', 'WHITE_LIST', env)),
+    remove_white: isAddressToDBEnabled(env, removeAddressFromDB('white', 'WHITE_LIST', 'address', env)),
+    remove_white_index: isAddressToDBEnabled(env, removeAddressFromDB('white_index', 'WHITE_LIST', 'index', env)),
+    list_white: isAddressToDBEnabled(env, listAddressesFromDB('white', 'WHITE_LIST', env)),
+    // block list
+    add_block: isAddressToDBEnabled(env, addAddressToDB('block', 'BLOCK_LIST', env)),
+    remove_block: isAddressToDBEnabled(env, removeAddressFromDB('block', 'BLOCK_LIST', 'address', env)),
+    remove_block_index: isAddressToDBEnabled(env, removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env)),
+    list_block: isAddressToDBEnabled(env, listAddressesFromDB('block', 'BLOCK_LIST', env)),
+    // test
     test: testAddress(message, env),
   };
+
+
   for (const key in authHandlers) {
-    if (message.text.startsWith(`/${key}`)) {
+    if (message.text.startsWith(`/${key}${(noArgCommands.includes(key) ? '' : ' ')}`)) {
       if (`${message.chat.id}` !== TELEGRAM_ID) {
         await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
           chat_id: message.chat.id,
@@ -97,6 +105,7 @@ async function telegramCommandHandler(message, env) {
         });
         return;
       }
+      console.log(`Command: ${key} => ${message.text}`);
       await authHandlers[key](message);
       return;
     }
@@ -126,6 +135,30 @@ function testAddress(message, env) {
       chat_id: msg.chat.id,
       text: `Address: ${address}\nResult: ${JSON.stringify(res, null, 2)}`,
     });
+  }
+}
+
+
+/**
+ * Add an address to the database.
+ * @param {Environment} env - The environment object.
+ * @param {function(TelegramMessage): Promise<void>} handler - The handler function.
+ * @return {(function(TelegramMessage): Promise<void>)}
+ */
+function isAddressToDBEnabled(env, handler) {
+  const {
+    LOAD_REGEX_FROM_DB,
+    TELEGRAM_TOKEN
+  } = env;
+  return async (msg) => {
+    if (LOAD_REGEX_FROM_DB !== 'true') {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: 'This command is disabled. You need to enable LOAD_REGEX_FROM_DB=true in the environment variables.',
+      });
+      return;
+    }
+    await handler(msg);
   }
 }
 
@@ -167,33 +200,71 @@ function addAddressToDB(command, key, env) {
  * Remove an address from the database.
  * @param {string} command - The command name.
  * @param {string} key - The key of the database.
+ * @param {string} mode - Remove mode: index or address.
  * @param {Environment} env - The environment object.
  * @return {(function(TelegramMessage): Promise<void>)}
  */
-function removeAddressFromDB(command, key, env) {
+function removeAddressFromDB(command, key, mode, env) {
   return async (msg) => {
     const {
       TELEGRAM_TOKEN,
       DB,
     } = env;
-    const address = msg.text.substring(`/remove_${command} `.length).trim();
-    if (!address) {
-      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-        chat_id: msg.chat.id,
-        text: `Please provide an email address. Example: /remove_${command} example@mail.com`,
-      });
-      return;
-    }
     const list = await loadArrayFromDB(DB, key);
-    if (list.includes(address)) {
-      list.splice(list.indexOf(address), 1);
-      await DB.put(key, JSON.stringify(list));
+    const address = msg.text.substring(`/remove_${command} `.length).trim();
+    console.log(`Remove: ${JSON.stringify({list, address, key, mode, command})}`);
+    switch (mode) {
+      case 'address': {
+        console.log(`Remove address: ${address}`);
+        if (!address) {
+          await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+            chat_id: msg.chat.id,
+            text: `Please provide an email address. Example: /remove_${command} example@mail.com`,
+          });
+          break;
+        }
+        if (!list.includes(address)) {
+          await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+            chat_id: msg.chat.id,
+            text: `${address} not found in ${key}`,
+            disable_web_page_preview: true,
+          });
+          break;
+        }
+        list.splice(list.indexOf(address), 1);
+        await DB.put(key, JSON.stringify(list));
+        await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+          chat_id: msg.chat.id,
+          text: `Removed ${address} from ${key}`,
+          disable_web_page_preview: true,
+        });
+        break;
+      }
+      case 'index': {
+        console.log(`Remove index: ${address}`);
+        const index = parseInt(address, 10);
+        if (isNaN(index) || index < 1 || index > list.length) {
+          console.log(`Invalid index: ${index}`);
+          await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+            chat_id: msg.chat.id,
+            text: `Invalid index. Please provide a number between 1 and ${list.length}`,
+          });
+          break;
+        }
+        const target = list[index - 1];
+        list.splice(index - 1, 1);
+        await DB.put(key, JSON.stringify(list));
+        await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+          chat_id: msg.chat.id,
+          text: `Removed ${target} from ${key}`,
+          disable_web_page_preview: true,
+        });
+        break;
+      }
+      default: {
+        throw new Error(`Invalid mode: ${mode}`);
+      }
     }
-    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-      chat_id: msg.chat.id,
-      text: `Removed ${address} from ${key}`,
-      disable_web_page_preview: true,
-    });
   };
 }
 
@@ -211,9 +282,18 @@ function listAddressesFromDB(command, key, env) {
       DB,
     } = env;
     const list = await loadArrayFromDB(DB, key);
+    let addresses = ""
+    if (list.length === 0) {
+      addresses = "Not found.";
+    } else {
+      for (let i = 0; i < list.length; i++) {
+        addresses += `${i + 1}. ${list[i]}\n`;
+      }
+      addresses = addresses.trim();
+    }
     await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
       chat_id: msg.chat.id,
-      text: `List of ${key}:\n${list.join('\n')}`,
+      text: `List of ${key}:\n\n${addresses}`,
       disable_web_page_preview: true,
     });
   };
@@ -238,6 +318,8 @@ async function telegramCallbackHandler(callback, env) {
   const chatId = callback.message?.chat?.id;
   const messageId = callback.message?.message_id;
 
+  console.log(`Received callback: ${data}`);
+
   const renderMap = {
     p: renderEmailPreviewMode,
     l: renderEmailListMode,
@@ -251,7 +333,7 @@ async function telegramCallbackHandler(callback, env) {
       show_alert: true,
     });
   };
-  if (Object.keys(renderMap).map((k) => data.startsWith(`${k}:`)).includes(true)) {
+  if (Object.keys(renderMap).findIndex((k) => data.startsWith(`${k}:`)) !== -1) {
     const id = data.substring(2);
     const render = renderMap[data[0]];
     const value = await loadMailCache(id, DB);
@@ -269,6 +351,13 @@ async function telegramCallbackHandler(callback, env) {
       await sendAlert('Email not found');
       return;
     }
+  }
+  if (data === 'delete') {
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'deleteMessage', {
+      chat_id: chatId,
+      message_id: messageId,
+    });
+    return;
   }
   console.log(`Unknown data: ${data}`);
 }
@@ -307,15 +396,15 @@ export async function setMyCommands(token) {
       },
       {
         command: 'test',
-        description: '/test <email> - Test an email address',
+        description: '/test <address> - Test an email address',
       },
       {
         command: 'add_white',
-        description: '/add_white <email> - Add an email address to the white list',
+        description: '/add_white <address> - Add an email address to the white list',
       },
       {
         command: 'remove_white',
-        description: '/remove_white <email> - Remove an email address from the white list',
+        description: '/remove_white <address> - Remove an email address from the white list, Or Use /remove_white_index <index> to emove an email address by index',
       },
       {
         command: 'list_white',
@@ -323,11 +412,11 @@ export async function setMyCommands(token) {
       },
       {
         command: 'add_block',
-        description: '/add_block <email> - Add an email address to the block list',
+        description: '/add_block <address> - Add an email address to the block list',
       },
       {
         command: 'remove_block',
-        description: '/remove_block <email> - Remove an email address from the block list',
+        description: '/remove_block <address> - Remove an email address from the block list, Or Use /remove_block_index <index> to remove an email address by index',
       },
       {
         command: 'list_block',

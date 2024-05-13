@@ -113,6 +113,10 @@ function renderEmailDetail(text, id) {
             text: 'Back',
             callback_data: `l:${id}`,
           },
+          {
+            text: 'Delete',
+            callback_data: 'delete',
+          }
         ],
       ],
     },
