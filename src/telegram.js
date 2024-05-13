@@ -67,7 +67,7 @@ async function telegramCommandHandler(message, env) {
   }
   command = command.substring(1);
 
-  const addressMiddlewares =[isAuthUser, isAddressToDBEnabled]
+  const addressMiddlewares =[isAuthUser, isLoadRegexFromDBEnabled]
   const middlewares = {
     add_white: addressMiddlewares,
     remove_white: addressMiddlewares,
@@ -97,7 +97,7 @@ async function telegramCommandHandler(message, env) {
     remove_block_index: removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env),
     list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
     // test
-    test: testAddress(message, env),
+    test: handleTestAddress(message, env),
   };
 
   // check if the command is in the handlers
@@ -123,7 +123,7 @@ async function telegramCommandHandler(message, env) {
  * @param {Object} env - The environment object containing configuration variables.
  * @returns {Function} - An async function that takes a message object and performs the address test.
  */
-function testAddress(env) {
+function handleTestAddress(env) {
   return async (msg) => {
     // /test abc@def.com
     const address = msg.text.substring('/test '.length).trim();
@@ -168,7 +168,7 @@ function handleIDCommand(env) {
  * @param {function(TelegramMessage): Promise<void>} handler - The handler function.
  * @return {(function(TelegramMessage): Promise<void>)}
  */
-function isAddressToDBEnabled(env, handler) {
+function isLoadRegexFromDBEnabled(env, handler) {
   const {
     LOAD_REGEX_FROM_DB,
     TELEGRAM_TOKEN
