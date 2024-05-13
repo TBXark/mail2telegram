@@ -170,20 +170,19 @@ function handleIDCommand(env) {
  */
 function isLoadRegexFromDBEnabled(env, handler) {
   const {
-    LOAD_REGEX_FROM_DB,
+    DISABLE_LOAD_REGEX_FROM_DB,
     TELEGRAM_TOKEN
   } = env;
-  return async (msg) => {
-    console.log(`Checking LOAD_REGEX_FROM_DB: ${LOAD_REGEX_FROM_DB}`);
-    if (LOAD_REGEX_FROM_DB !== 'true') {
+  if (DISABLE_LOAD_REGEX_FROM_DB === 'true') {
+    return async (msg) => {
       await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
         chat_id: msg.chat.id,
         text: 'This command is disabled. You need to enable LOAD_REGEX_FROM_DB=true in the environment variables.',
       });
       return;
     }
-    await handler(msg);
   }
+  return handler;
 }
 
 /**
@@ -262,6 +261,14 @@ function removeAddressFromDB(command, key, mode, env) {
     const list = await loadArrayFromDB(DB, key);
     const address = msg.text.substring(`/remove_${command} `.length).trim();
     console.log(`Remove: ${JSON.stringify({list, address, key, mode, command})}`);
+    if (list.length === 0) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: `${key} is empty.`,
+        disable_web_page_preview: true,
+      });
+      return;
+    }
     switch (mode) {
       case 'address': {
         console.log(`Remove address: ${address}`);
@@ -296,7 +303,7 @@ function removeAddressFromDB(command, key, mode, env) {
           console.log(`Invalid index: ${index}`);
           await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
             chat_id: msg.chat.id,
-            text: `Invalid index. Please provide a number between 1 and ${list.length}, Example: /remove_${command} 1`,
+            text: `Invalid index. Please provide a number between 1 and ${list.length + 1}, Example: /remove_${command} 1`,
           });
           break;
         }
@@ -362,50 +369,55 @@ async function telegramCallbackHandler(callback, env) {
     DB,
   } = env;
 
+  // Data格式: action:args
   const data = callback.data;
   const callbackId = callback.id;
   const chatId = callback.message?.chat?.id;
   const messageId = callback.message?.message_id;
 
-  console.log(`Received callback: ${data}`);
-
-  const renderMap = {
-    p: renderEmailPreviewMode,
-    l: renderEmailListMode,
-    s: renderEmailSummaryMode,
-    d: renderEmailDebugMode,
-  };
+  console.log(`Received callback: ${JSON.stringify({data, callbackId, chatId, messageId})}`);
+  
   const sendAlert = async (text) => {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'answerCallbackQuery', {
       callback_query_id: callbackId,
-      text: text,
+      text,
       show_alert: true,
     });
   };
-  if (Object.keys(renderMap).findIndex((k) => data.startsWith(`${k}:`)) !== -1) {
-    const id = data.substring(2);
-    const render = renderMap[data[0]];
-    const value = await loadMailCache(id, DB);
-    if (value) {
-      try {
-        const req = await render(value, env);
-        req.chat_id = chatId;
-        req.message_id = messageId;
-        await sendTelegramRequest(TELEGRAM_TOKEN, 'editMessageText', req);
-      } catch (e) {
-        await sendAlert(`Error: ${e.message}`);
-        return;
-      }
-    } else {
-      await sendAlert('Email not found');
-      return;
+
+  const renderHandlerBuilder =  (render) => async (arg) => {
+    const value = await loadMailCache(arg, DB);
+    if (!value) {
+      throw new Error('Error: Email not found or expired.');
     }
+    const req = await render(value, env);
+    req.chat_id = chatId;
+    req.message_id = messageId;
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'editMessageText', req);
   }
-  if (data === 'delete') {
+
+  const deleteMessage = async () => {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'deleteMessage', {
       chat_id: chatId,
       message_id: messageId,
     });
+  }
+
+  const handlers = {
+    p: renderHandlerBuilder(renderEmailPreviewMode),
+    l: renderHandlerBuilder(renderEmailListMode),
+    s: renderHandlerBuilder(renderEmailSummaryMode),
+    d: renderHandlerBuilder(renderEmailDebugMode),
+    delete: deleteMessage,
+  };
+
+  const [act, arg] = data.split(/:(.*)/);
+  if (handlers[act]) {
+    try {
+      await handlers[act](arg);
+    } catch (e) {
+      await sendAlert(e.message);
+    }
     return;
   }
   console.log(`Unknown data: ${data}`);

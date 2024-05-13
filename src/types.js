@@ -30,7 +30,7 @@
  * @property {string} FORWARD_LIST - The list of email addresses to forward the email to.
  * @property {string} BLOCK_LIST - The list of email addresses to block.
  * @property {string} WHITE_LIST - The list of email addresses to allow.
- * @property {string} LOAD_REGEX_FROM_DB - Whether to load the regex from the database.
+ * @property {string} DISABLE_LOAD_REGEX_FROM_DB - Whether to load the regex from the database.
  * @property {string} BLOCK_POLICY - The policy of blocked emails, options are 'forward', 'telegram', 'reject', Specify multiple options by separating them with a comma.
  * @property {string} MAIL_TTL - The TTL of the email in seconds.
  * @property {string} DOMAIN - The domain name of the service.

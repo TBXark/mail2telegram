@@ -98,12 +98,12 @@ export async function checkAddressStatus(addresses, env) {
   const {
     BLOCK_LIST,
     WHITE_LIST,
-    LOAD_REGEX_FROM_DB,
+    LDISABLE_OAD_REGEX_FROM_DB,
     DB,
   } = env;
   const blockList = loadArrayFromRaw(BLOCK_LIST);
   const whiteList = loadArrayFromRaw(WHITE_LIST);
-  if (LOAD_REGEX_FROM_DB === 'true') {
+  if (!(LDISABLE_OAD_REGEX_FROM_DB === 'true')) {
     blockList.push(...(await loadArrayFromDB(DB, 'BLOCK_LIST')));
     whiteList.push(...(await loadArrayFromDB(DB, 'WHITE_LIST')));
   }
