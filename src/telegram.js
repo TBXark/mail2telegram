@@ -3,6 +3,7 @@ import { parseEmail } from './parse.js';
 import './types.js';
 import { checkAddressStatus, loadArrayFromDB, loadMailCache } from './dao.js';
 
+
 /**
  * Sends a Telegram API request.
  *
@@ -59,57 +60,60 @@ export async function sendMailToTelegram(message, env) {
  * @return {Promise<void>} The fetch response.
  */
 async function telegramCommandHandler(message, env) {
-  const {
-    TELEGRAM_TOKEN,
-    TELEGRAM_ID,
-  } = env;
-  const idCommand = async (msg) => {
-    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-      chat_id: msg.chat.id,
-      text: `Your chat ID is ${msg.chat.id}`,
-    });
-  };
-  const noArgCommands = ['id', 'start', 'list_white', 'list_block'];
-  const handlers = {
-    id: idCommand,
-    start: idCommand,
-  };
-  for (const key in handlers) {
-    if (message.text.startsWith(`/${key}`)) {
-      await handlers[key](message);
-      return;
-    }
+  let [command] = message.text.split(/ (.*)/);
+  if (!command.startsWith('/')) {
+    console.log(`Invalid command: ${command}`);
+    return;
   }
-  const authHandlers = {
+  command = command.substring(1);
+
+  const addressMiddlewares =[isAuthUser, isAddressToDBEnabled]
+  const middlewares = {
+    add_white: addressMiddlewares,
+    remove_white: addressMiddlewares,
+    remove_white_index: addressMiddlewares,
+    list_white: addressMiddlewares,
+    
+    add_block: addressMiddlewares,
+    remove_block: addressMiddlewares,
+    remove_block_index: addressMiddlewares,
+    list_block: addressMiddlewares, 
+
+    test: [isAuthUser],
+  }
+  
+  const handlers = {
+    // no auth
+    id: handleIDCommand(env),
+    start: handleIDCommand(env),
     // white list
-    add_white: isAddressToDBEnabled(env, addAddressToDB('white', 'WHITE_LIST', env)),
-    remove_white: isAddressToDBEnabled(env, removeAddressFromDB('white', 'WHITE_LIST', 'address', env)),
-    remove_white_index: isAddressToDBEnabled(env, removeAddressFromDB('white_index', 'WHITE_LIST', 'index', env)),
-    list_white: isAddressToDBEnabled(env, listAddressesFromDB('white', 'WHITE_LIST', env)),
+    add_white: addAddressToDB('white', 'WHITE_LIST', env),
+    remove_white: removeAddressFromDB('white', 'WHITE_LIST', 'address', env),
+    remove_white_index: removeAddressFromDB('white_index', 'WHITE_LIST', 'index', env),
+    list_white: listAddressesFromDB('white', 'WHITE_LIST', env),
     // block list
-    add_block: isAddressToDBEnabled(env, addAddressToDB('block', 'BLOCK_LIST', env)),
-    remove_block: isAddressToDBEnabled(env, removeAddressFromDB('block', 'BLOCK_LIST', 'address', env)),
-    remove_block_index: isAddressToDBEnabled(env, removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env)),
-    list_block: isAddressToDBEnabled(env, listAddressesFromDB('block', 'BLOCK_LIST', env)),
+    add_block: addAddressToDB('block', 'BLOCK_LIST', env),
+    remove_block: removeAddressFromDB('block', 'BLOCK_LIST', 'address', env),
+    remove_block_index: removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env),
+    list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
     // test
     test: testAddress(message, env),
   };
 
-
-  for (const key in authHandlers) {
-    if (message.text.startsWith(`/${key}${(noArgCommands.includes(key) ? '' : ' ')}`)) {
-      if (`${message.chat.id}` !== TELEGRAM_ID) {
-        await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-          chat_id: message.chat.id,
-          text: 'You are not authorized to use this command.',
-        });
-        return;
+  // check if the command is in the handlers
+  if (handlers[command]) {
+    console.log(`Received command: ${command}`);
+    let handler = handlers[command];
+    if (middlewares[command]) {
+      for (const middleware of middlewares[command]) {
+        handler = middleware(env, handler);
       }
-      console.log(`Command: ${key} => ${message.text}`);
-      await authHandlers[key](message);
-      return;
     }
+    await handler(message);
+    return; 
   }
+
+  console.log(`Unknown command: ${command}`);
 }
 
 
@@ -119,10 +123,10 @@ async function telegramCommandHandler(message, env) {
  * @param {Object} env - The environment object containing configuration variables.
  * @returns {Function} - An async function that takes a message object and performs the address test.
  */
-function testAddress(message, env) {
+function testAddress(env) {
   return async (msg) => {
     // /test abc@def.com
-    const address = message.text.substring('/test '.length).trim();
+    const address = msg.text.substring('/test '.length).trim();
     if (!address) {
       await sendTelegramRequest(env.TELEGRAM_TOKEN, 'sendMessage', {
         chat_id: msg.chat.id,
@@ -140,6 +144,25 @@ function testAddress(message, env) {
 
 
 /**
+ * Handles the ID command by sending the chat ID to the user.
+ * @param {Object} message - The message object received from the user.
+ * @param {Object} env - The environment object containing the Telegram token.
+ * @returns {Function} - An async function that takes a message object and sends the chat ID to the user.
+ */
+function handleIDCommand(env) {
+  return async (msg) => {
+    const {
+      TELEGRAM_TOKEN,
+    } = env;
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: `Your chat ID is ${msg.chat.id}`,
+    });
+  }
+}
+
+
+/**
  * Add an address to the database.
  * @param {Environment} env - The environment object.
  * @param {function(TelegramMessage): Promise<void>} handler - The handler function.
@@ -151,10 +174,36 @@ function isAddressToDBEnabled(env, handler) {
     TELEGRAM_TOKEN
   } = env;
   return async (msg) => {
+    console.log(`Checking LOAD_REGEX_FROM_DB: ${LOAD_REGEX_FROM_DB}`);
     if (LOAD_REGEX_FROM_DB !== 'true') {
       await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
         chat_id: msg.chat.id,
         text: 'This command is disabled. You need to enable LOAD_REGEX_FROM_DB=true in the environment variables.',
+      });
+      return;
+    }
+    await handler(msg);
+  }
+}
+
+/**
+ * Checks if the user is authorized to use the command.
+ *
+ * @param {Object} env - The environment variables.
+ * @param {Function} handler - The handler function to be executed if the user is authorized.
+ * @returns {Function} - The async function that checks if the user is authorized.
+ */
+function isAuthUser(env, handler) {
+  const {
+    TELEGRAM_TOKEN,
+    TELEGRAM_ID
+  } = env;
+  return async (msg) => {
+    console.log(`Checking TELEGRAM_ID: ${msg.chat.id}`);
+    if (`${msg.chat.id}` !== TELEGRAM_ID) {
+      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+        chat_id: msg.chat.id,
+        text: 'You are not authorized to use this command.',
       });
       return;
     }
@@ -247,7 +296,7 @@ function removeAddressFromDB(command, key, mode, env) {
           console.log(`Invalid index: ${index}`);
           await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
             chat_id: msg.chat.id,
-            text: `Invalid index. Please provide a number between 1 and ${list.length}`,
+            text: `Invalid index. Please provide a number between 1 and ${list.length}, Example: /remove_${command}_index 1`,
           });
           break;
         }
