@@ -296,7 +296,7 @@ function removeAddressFromDB(command, key, mode, env) {
           console.log(`Invalid index: ${index}`);
           await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
             chat_id: msg.chat.id,
-            text: `Invalid index. Please provide a number between 1 and ${list.length}, Example: /remove_${command}_index 1`,
+            text: `Invalid index. Please provide a number between 1 and ${list.length}, Example: /remove_${command} 1`,
           });
           break;
         }
