@@ -65,8 +65,8 @@ mail2telegram
 | TELEGRAM_TOKEN         | Telegram Bot Token 例如：`7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                     |
 | DOMAIN                 | Workers的域名, 例如: `project_name.user_name.workers.dev`                                                                                                                  |
 | FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                                                                                                                               |
-| WHITE_LIST             | 发件人白名单，一个正则表达式数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                                                       |
-| BLOCK_LIST             | 发件人黑名单，一个正则表达式数组转成字符串                                                                                                                                                 |
+| WHITE_LIST             | 发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                                                       |
+| BLOCK_LIST             | 发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串                                                                                                                                                 |
 | MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                                                                                                                                |
 | OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮                                                                                                                        |
 | OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions`                                                                                                             |
@@ -126,6 +126,9 @@ To: [recipient]
 此Bot展示不支持附件，如果你需要附件支持可以联合我的另外一个项目[testmail-viewer](https://github.com/TBXark/testmail-viewer), 使用`FORWARD_LIST`将邮件转发到你的testmail，这样你就可以使用[testmail-viewer](https://github.com/TBXark/testmail-viewer)下载你的附件。
 
 由于Workers限制，邮件大小（主要是附件大小）一旦太大就会执行函数超时，此时Workers会进行多次重试，可能导致你收到多次的通知，备份邮箱也会收到多次的邮件。而且这个重试是有次数限制的，一旦超过限制就不会继续重试了。这就有可能导致你的邮件丢失。所以建议你在`FORWARD_LIST`中填入你的备份邮箱，这样即使你的邮件丢失了，你也可以在备份邮箱中找到你的邮件。如果你经常遇到这个问题你可以尝试打开守护模式（`GUARDIAN_MODE`），这样他就会记录已经执行过的操作并不在下一次重试时执行。从而减少重复消息的干扰，而且增加worker的成功概率。但是这个操作会消耗较多的KV写入次数，所以建议你在有需要的时候开启。
+
+关于黑白名单匹配规则，下面以白名单举例，首先会从环境变量中读取`WHITE_LIST`转换成数组，然后再从KV中读取`WHITE_LIST`转换成数组,然后将两个数组合并得到完整的白名单规则。匹配时会先判断数组的元素是不是和待匹配的字符串相等，如果相等则匹配成功，如果不相等则会将数组的元素转换成正则表达式，然后再匹配，如果匹配成功则返回成功。如果所有的元素都匹配失败则返回失败。
+
 
 ## 许可证
 
