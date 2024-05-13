@@ -58,23 +58,23 @@ Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, chec
 
 Location: Workers & Pages - your_work_name - Settings - Variables
 
-| KEY                    | Description                                                                                                                                                                                                                                                                                                                                                                                            |
-|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100.                                                                                                                                                                                                                                                                                                                              |
-| TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                                                                                                                                                                                                                                                     |
-| DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev`                                                                                                                                                                                                                                                                                                                                     |
-| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                                                                                                                                                                                                                                                                   |
-| WHITE_LIST             | Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]`                                                                                                                                                                                                                                                                                              |
-| BLOCK_LIST             | Sender blacklist, an array of regular expressions or email address converted to a string                                                                                                                                                                                                                                                                                                                                |
-| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up.                                                                                                                                                                                                                                                   |
-| OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear.                                                                                                                                                                                                                                                                                           |
-| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                                                                                                                                                                                                                                                                        |
-| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-3.5-turbo`                                                                                                                                                                                                                                                                                                                                                   |
-| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english`                                                                                                                                                                                                                                                                                                                            |
-| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`.                                                                                                                                                                                                                                                                                                                                     |
-| MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024.                                                                                                                                                                  |
+| KEY                    | Description                                                  |
+| :--------------------- | :----------------------------------------------------------- |
+| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. |
+| TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0` |
+| DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev` |
+| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,` |
+| WHITE_LIST             | Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]` |
+| BLOCK_LIST             | Sender blacklist, an array of regular expressions or email address converted to a string |
+| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up. |
+| OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear. |
+| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions` |
+| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-3.5-turbo`         |
+| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english` |
+| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`. |
+| MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024. |
 | MAX_EMAIL_SIZE_POLICY  | The available values are `unhandled`, `truncate` and `continute`. `unhandled` means return the headers without parsing the message body, `truncate` means truncate the message body and only parse the allowed size, `continute` means continue to process the message regardless of the size limit. The default is `truncate`. This policy only affects Telegram push messages, not email forwarding. |
-| DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV.                                                                                                                                                                                                                                                                                                                                    |
+| DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV. |
 
 > `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
 
@@ -83,13 +83,15 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 ## Commands
 
 | Command                 | Description                                 |
-|-------------------------|---------------------------------------------|
+|:------------------------|:--------------------------------------------|
 | `/id`                   | Get your chat ID                            |
 | `/add_white <email>`    | Add an email address to the white list      |
 | `/remove_white <email>` | Remove an email address from the white list |
+| `/remove_white_index <index>` | Remove an email address from the white list by index |
 | `/list_white`           | List the email addresses in the white list  |
 | `/add_block <email>`    | Add an email address to the block list      |
 | `/remove_block <email>` | Remove an email address from the block list |
+| `/remove_block_index <index>` | Remove an email address from the block list by index |
 | `/list_block`           | List the email addresses in the block list  |
 | `/test <email>`         | Test the email address                      |
 

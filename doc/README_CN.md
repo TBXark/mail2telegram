@@ -59,23 +59,23 @@ mail2telegram
 
 位置：Workers和Pages - 你的worker名称 - 设置 - 变量
 
-| KEY                    | 描述                                                                                                                                                                    |
-|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| TELEGRAM_ID            | Bot发送目的地的Chat ID（比如你自己Telegram账号的ID），可以通过bot的`/id`指令获取, 一般为一串数字，群组以-100开头                                                                                                                                       |
-| TELEGRAM_TOKEN         | Telegram Bot Token 例如：`7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                     |
-| DOMAIN                 | Workers的域名, 例如: `project_name.user_name.workers.dev`                                                                                                                  |
-| FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                                                                                                                               |
-| WHITE_LIST             | 发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                                                       |
-| BLOCK_LIST             | 发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串                                                                                                                                                 |
-| MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                                                                                                                                |
-| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮                                                                                                                        |
-| OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions`                                                                                                             |
-| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                                                                                                                                           |
-| SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                                                                                                                              |
-| GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                                                                                                                                               |
-| MAX_EMAIL_SIZE         | 最大邮件大小，单位字节，超过此大小的邮件将会根据`MAX_EMAIL_SIZE_POLICY`判断处理逻辑。主要作用是防止邮件附件过大导致worker函数超时。默认为512*1024                                                                           |
+| KEY                    | 描述                                                         |
+| :--------------------- | ------------------------------------------------------------ |
+| TELEGRAM_ID            | Bot发送目的地的Chat ID（比如你自己Telegram账号的ID），可以通过bot的`/id`指令获取, 一般为一串数字，群组以-100开头 |
+| TELEGRAM_TOKEN         | Telegram Bot Token 例如：`7123456780:AAjkLAbvSgDdfsDdfsaSK0` |
+| DOMAIN                 | Workers的域名, 例如: `project_name.user_name.workers.dev`    |
+| FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔 |
+| WHITE_LIST             | 发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]` |
+| BLOCK_LIST             | 发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串       |
+| MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份 |
+| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮 |
+| OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions` |
+| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                       |
+| SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                       |
+| GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                     |
+| MAX_EMAIL_SIZE         | 最大邮件大小，单位字节，超过此大小的邮件将会根据`MAX_EMAIL_SIZE_POLICY`判断处理逻辑。主要作用是防止邮件附件过大导致worker函数超时。默认为512*1024 |
 | MAX_EMAIL_SIZE_POLICY  | 可选值为`unhandled`,`truncate`,`continute`。 `unhandled`表示不处理只返回邮件头信息不解析邮件正文，`truncate`表示截断邮件正文只解析允许的大小，`continute`表示继续处理不管大小限制。默认为`truncate`。这个策略只影响Telegram推送消息，不影响邮件转发。 |
-| DB                     | 在下方的 `KV 命名空间绑定` 处将数据库绑定到worker, `变量名称`必须为`DB`，`KV 命名空间`选新建好的任意KV                                                                                                                      |
+| DB                     | 在下方的 `KV 命名空间绑定` 处将数据库绑定到worker, `变量名称`必须为`DB`，`KV 命名空间`选新建好的任意KV |
 
 > `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。
 
@@ -89,9 +89,11 @@ mail2telegram
 | `/id`                   | 获取您的聊天ID         |
 | `/add_white <email>`    | 将电子邮件地址添加到白名单。   |
 | `/remove_white <email>` | 从白名单中删除一个电子邮件地址。 |
+| `/remove_white_index <index>` | 从白名单中删除一个电子邮件地址，通过索引删除。 |
 | `/list_white`           | 列出白名单中的电子邮件地址。   |
 | `/add_block <email>`    | 将电子邮件地址添加到阻止列表中。 |
 | `/remove_block <email>` | 从阻止列表中删除电子邮件地址。  |
+| `/remove_block_index <index>` | 从阻止列表中删除一个电子邮件地址，通过索引删除。 |
 | `/list_block`           | 列出阻止列表中的电子邮件地址。  |
 | `/test <email>`         | 测试电子邮件地址是否在白名单或阻止列表中。 |
 
