@@ -48,8 +48,10 @@ export async function sendMailToTelegram(message, env) {
   const mail = await parseEmail(message, maxSize, maxSizePolicy);
   await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
   const req = await renderEmailListMode(mail, env);
-  req.chat_id = TELEGRAM_ID;
-  await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', req);
+  for (const id of TELEGRAM_ID.split(',')) {
+    req.chat_id = id;
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', req);
+  }
 }
 
 /**
@@ -67,21 +69,21 @@ async function telegramCommandHandler(message, env) {
   }
   command = command.substring(1);
 
-  const addressMiddlewares =[isAuthUser, isLoadRegexFromDBEnabled]
+  const addressMiddlewares = [isAuthUser, isLoadRegexFromDBEnabled]
   const middlewares = {
     add_white: addressMiddlewares,
     remove_white: addressMiddlewares,
     remove_white_index: addressMiddlewares,
     list_white: addressMiddlewares,
-    
+
     add_block: addressMiddlewares,
     remove_block: addressMiddlewares,
     remove_block_index: addressMiddlewares,
-    list_block: addressMiddlewares, 
+    list_block: addressMiddlewares,
 
     test: [isAuthUser],
   }
-  
+
   const handlers = {
     // no auth
     id: handleIDCommand(env),
@@ -110,7 +112,7 @@ async function telegramCommandHandler(message, env) {
       }
     }
     await handler(message);
-    return; 
+    return;
   }
 
   console.log(`Unknown command: ${command}`);
@@ -199,14 +201,16 @@ function isAuthUser(env, handler) {
   } = env;
   return async (msg) => {
     console.log(`Checking TELEGRAM_ID: ${msg.chat.id}`);
-    if (`${msg.chat.id}` !== TELEGRAM_ID) {
-      await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-        chat_id: msg.chat.id,
-        text: 'You are not authorized to use this command.',
-      });
-      return;
+    for (const id of TELEGRAM_ID.split(',')) {
+      if (`${msg.chat.id}` !== id) {
+        await handler(msg);
+        return;
+      }
     }
-    await handler(msg);
+    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
+      chat_id: msg.chat.id,
+      text: 'You are not authorized to use this command.',
+    });
   }
 }
 
@@ -260,7 +264,7 @@ function removeAddressFromDB(command, key, mode, env) {
     } = env;
     const list = await loadArrayFromDB(DB, key);
     const address = msg.text.substring(`/remove_${command} `.length).trim();
-    console.log(`Remove: ${JSON.stringify({list, address, key, mode, command})}`);
+    console.log(`Remove: ${JSON.stringify({ list, address, key, mode, command })}`);
     if (list.length === 0) {
       await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
         chat_id: msg.chat.id,
@@ -375,8 +379,8 @@ async function telegramCallbackHandler(callback, env) {
   const chatId = callback.message?.chat?.id;
   const messageId = callback.message?.message_id;
 
-  console.log(`Received callback: ${JSON.stringify({data, callbackId, chatId, messageId})}`);
-  
+  console.log(`Received callback: ${JSON.stringify({ data, callbackId, chatId, messageId })}`);
+
   const sendAlert = async (text) => {
     await sendTelegramRequest(TELEGRAM_TOKEN, 'answerCallbackQuery', {
       callback_query_id: callbackId,
@@ -385,7 +389,7 @@ async function telegramCallbackHandler(callback, env) {
     });
   };
 
-  const renderHandlerBuilder =  (render) => async (arg) => {
+  const renderHandlerBuilder = (render) => async (arg) => {
     const value = await loadMailCache(arg, DB);
     if (!value) {
       throw new Error('Error: Email not found or expired.');

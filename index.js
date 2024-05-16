@@ -128,14 +128,7 @@ async function emailHandler(message, env, ctx) {
   try {
     const blockTelegram = isBlock && blockPolicy.includes('telegram');
     if (!status.telegram && !blockTelegram) {
-      const tgIds = env.TELEGRAM_ID.split(",");
-      for (let i = 0; i < tgIds.length; i++) {
-        const Mail2TgEnv = {
-          ...env,
-          TELEGRAM_ID: tgIds[i]
-        }
-        await sendMailToTelegram(message, Mail2TgEnv);
-      }
+      await sendMailToTelegram(message, env);
     }
     if (isGuardian) {
       status.telegram = true;
