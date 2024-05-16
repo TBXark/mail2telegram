@@ -61,7 +61,7 @@ mail2telegram
 
 | KEY                    | 描述                                                         |
 | :--------------------- | ------------------------------------------------------------ |
-| TELEGRAM_ID            | Bot发送目的地的Chat ID（比如你自己Telegram账号的ID），可以通过bot的`/id`指令获取, 一般为一串数字，群组以-100开头 |
+| TELEGRAM_ID            | Bot发送目的地的Chat ID（比如你自己Telegram账号的ID），可以通过bot的`/id`指令获取, 一般为一串数字，群组以-100开头, 多个ID以英文逗号分隔 |
 | TELEGRAM_TOKEN         | Telegram Bot Token 例如：`7123456780:AAjkLAbvSgDdfsDdfsaSK0` |
 | DOMAIN                 | Workers的域名, 例如: `project_name.user_name.workers.dev`    |
 | FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔 |
