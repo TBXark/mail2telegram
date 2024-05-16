@@ -60,7 +60,7 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 
 | KEY                    | Description                                                  |
 | :--------------------- | :----------------------------------------------------------- |
-| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. |
+| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. Multiple IDs separated by English commas |
 | TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0` |
 | DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev` |
 | FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,` |
