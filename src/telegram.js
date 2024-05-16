@@ -97,7 +97,7 @@ async function telegramCommandHandler(message, env) {
     remove_block_index: removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env),
     list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
     // test
-    test: handleTestAddress(message, env),
+    test: handleTestAddress(env),
   };
 
   // check if the command is in the handlers
