@@ -54,6 +54,14 @@ export async function sendMailToTelegram(message, env) {
   }
 }
 
+/* 
+* 
+* @typedef {function(TelegramMessage): Promise<void>} CommandHandlerMiddleware
+* @typedef {function(TelegramMessage): Promise<void>} CommandHandler
+* @typedef {Object} CommandHandlerGroup
+* @property {Array<CommandHandlerMiddleware>} middlewares - The middlewares for the command.
+* @property {Map<string, CommandHandler>} handlers - The handlers for the command.
+*/
 /**
  * Handles the incoming Telegram command
  *
@@ -68,53 +76,61 @@ async function telegramCommandHandler(message, env) {
     return;
   }
   command = command.substring(1);
-
-  const addressMiddlewares = [isAuthUser, isLoadRegexFromDBEnabled]
-  const middlewares = {
-    add_white: addressMiddlewares,
-    remove_white: addressMiddlewares,
-    remove_white_index: addressMiddlewares,
-    list_white: addressMiddlewares,
-
-    add_block: addressMiddlewares,
-    remove_block: addressMiddlewares,
-    remove_block_index: addressMiddlewares,
-    list_block: addressMiddlewares,
-
-    test: [isAuthUser],
-  }
-
-  const handlers = {
-    // no auth
-    id: handleIDCommand(env),
-    start: handleIDCommand(env),
-    // white list
-    add_white: addAddressToDB('white', 'WHITE_LIST', env),
-    remove_white: removeAddressFromDB('white', 'WHITE_LIST', 'address', env),
-    remove_white_index: removeAddressFromDB('white_index', 'WHITE_LIST', 'index', env),
-    list_white: listAddressesFromDB('white', 'WHITE_LIST', env),
-    // block list
-    add_block: addAddressToDB('block', 'BLOCK_LIST', env),
-    remove_block: removeAddressFromDB('block', 'BLOCK_LIST', 'address', env),
-    remove_block_index: removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env),
-    list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
-    // test
-    test: handleTestAddress(env),
-  };
-
-  // check if the command is in the handlers
-  if (handlers[command]) {
-    console.log(`Received command: ${command}`);
-    let handler = handlers[command];
-    if (middlewares[command]) {
-      for (const middleware of middlewares[command]) {
-        handler = middleware(env, handler);
+  /**
+   * @type {Array<CommandHandlerGroup>}
+   * */
+  const handlerGroup = [
+      {
+        middlewares:[],
+        handlers: {
+          id: handleIDCommand(env),
+          start: handleIDCommand(env),
+        }
+      },
+      {
+        middlewares: [
+          isAuthUser,
+          isLoadRegexFromDBEnabled
+        ],
+        handlers: {
+          // white list
+          add_white: addAddressToDB('white', 'WHITE_LIST', env),
+          remove_white: removeAddressFromDB('white', 'WHITE_LIST', 'address', env),
+          remove_white_index: removeAddressFromDB('white_index', 'WHITE_LIST', 'index', env),
+          list_white: listAddressesFromDB('white', 'WHITE_LIST', env),
+          // block list
+          add_block: addAddressToDB('block', 'BLOCK_LIST', env),
+          remove_block: removeAddressFromDB('block', 'BLOCK_LIST', 'address', env),
+          remove_block_index: removeAddressFromDB('block_index', 'BLOCK_LIST', 'index', env),
+          list_block: listAddressesFromDB('block', 'BLOCK_LIST', env),
+        }
+      },
+      {
+        middlewares: [
+          isAuthUser,
+        ],
+        handlers: {
+          test: handleTestAddress(env),
+        }
       }
+  ]
+  
+  for (const group of handlerGroup) {
+    const { middlewares, handlers } = group;
+    // check if the command is in the handlers
+    if (handlers[command]) {
+      console.log(`Received command: ${command}`);
+      let handler = handlers[command];
+      if (middlewares) {
+        for (const middleware of middlewares) {
+          handler = middleware(env, handler);
+        }
+      }
+      await handler(message);
+      return;
     }
-    await handler(message);
-    return;
   }
-
+  
   console.log(`Unknown command: ${command}`);
 }
 
