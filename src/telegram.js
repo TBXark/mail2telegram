@@ -202,7 +202,7 @@ function isAuthUser(env, handler) {
   return async (msg) => {
     console.log(`Checking TELEGRAM_ID: ${msg.chat.id}`);
     for (const id of TELEGRAM_ID.split(',')) {
-      if (`${msg.chat.id}` !== id) {
+      if (`${msg.chat.id}` === id) {
         await handler(msg);
         return;
       }
