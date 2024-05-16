@@ -1,8 +1,12 @@
-import {Router} from 'itty-router';
-import {sendMailToTelegram, sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './src/telegram.js';
-import {isMessageBlock, loadMailCache, loadMailStatus} from './src/dao.js';
-import './src/types.js';
-
+import { Router } from "itty-router";
+import {
+  sendMailToTelegram,
+  sendTelegramRequest,
+  setMyCommands,
+  telegramWebhookHandler,
+} from "./src/telegram.js";
+import { isMessageBlock, loadMailCache, loadMailStatus } from "./src/dao.js";
+import "./src/types.js";
 
 /**
  * Handles the fetch request.
@@ -14,45 +18,40 @@ import './src/types.js';
  */
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
-   
   const router = Router();
-  const {
-    TELEGRAM_TOKEN,
-    DOMAIN,
-    DB,
-  } = env;
+  const { TELEGRAM_TOKEN, DOMAIN, DB } = env;
 
-  router.get('/init', async () => {
-    const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
+  router.get("/init", async () => {
+    const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, "setWebhook", {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
     });
     const commands = await setMyCommands(TELEGRAM_TOKEN);
-    return new Response(JSON.stringify({webhook, commands}));
+    return new Response(JSON.stringify({ webhook, commands }));
   });
 
-  router.post('/telegram/:token/webhook', async (req) => {
+  router.post("/telegram/:token/webhook", async (req) => {
     if (req.params.token !== TELEGRAM_TOKEN) {
-      return new Response('Invalid token');
+      return new Response("Invalid token");
     }
     try {
       await telegramWebhookHandler(req, env);
     } catch (e) {
       console.error(e);
     }
-    return new Response('OK');
+    return new Response("OK");
   });
 
-  router.get('/email/:id', async (req) => {
+  router.get("/email/:id", async (req) => {
     const id = req.params.id;
-    const mode = req.query.mode || 'text';
+    const mode = req.query.mode || "text";
     const value = await loadMailCache(id, DB);
     const headers = {};
     switch (mode) {
-      case 'html':
-        headers['content-type'] = 'text/html; charset=utf-8';
+      case "html":
+        headers["content-type"] = "text/html; charset=utf-8";
         break;
       default:
-        headers['content-type'] = 'text/plain; charset=utf-8';
+        headers["content-type"] = "text/plain; charset=utf-8";
         break;
     }
     return new Response(value[mode], {
@@ -60,8 +59,8 @@ async function fetchHandler(request, env, ctx) {
     });
   });
 
-  router.all('*', async () => {
-    return new Response('It works!');
+  router.all("*", async () => {
+    return new Response("It works!");
   });
 
   return router.handle(request).catch((e) => {
@@ -82,29 +81,25 @@ async function fetchHandler(request, env, ctx) {
  */
 // eslint-disable-next-line no-unused-vars
 async function emailHandler(message, env, ctx) {
-  const {
-    FORWARD_LIST,
-    BLOCK_POLICY,
-    GUARDIAN_MODE,
-    DB,
-  } = env;
-  const id = message.headers.get('Message-ID');
+  const { FORWARD_LIST, BLOCK_POLICY, GUARDIAN_MODE, DB } = env;
+
+  const id = message.headers.get("Message-ID");
   const isBlock = await isMessageBlock(message, env);
-  const isGuardian = GUARDIAN_MODE === 'true';
-  const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
-  const statusTTL = {expirationTtl: 60 * 60};
+  const isGuardian = GUARDIAN_MODE === "true";
+  const blockPolicy = (BLOCK_POLICY || "telegram").split(",");
+  const statusTTL = { expirationTtl: 60 * 60 };
   const status = await loadMailStatus(id, isGuardian, DB);
 
   // Reject the email
-  if (isBlock && blockPolicy.includes('reject')) {
-    message.setReject('Blocked');
+  if (isBlock && blockPolicy.includes("reject")) {
+    message.setReject("Blocked");
     return;
   }
 
   // Forward to email
   try {
-    const blockForward = isBlock && blockPolicy.includes('forward');
-    const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
+    const blockForward = isBlock && blockPolicy.includes("forward");
+    const forwardList = blockForward ? [] : (FORWARD_LIST || "").split(",");
     for (const forward of forwardList) {
       try {
         const add = forward.trim();
@@ -126,9 +121,17 @@ async function emailHandler(message, env, ctx) {
 
   // Send to Telegram
   try {
-    const blockTelegram = isBlock && blockPolicy.includes('telegram');
+    const blockTelegram = isBlock && blockPolicy.includes("telegram");
     if (!status.telegram && !blockTelegram) {
-      await sendMailToTelegram(message, env);
+      const tgIds = env.TELEGRAM_ID.split(",");
+
+      for (let i = 0; i < tgIds.length; i++) {
+        const Mail2TgEnv = {
+          ...env,
+          TELEGRAM_ID: tgIds[i]
+        }
+        await sendMailToTelegram(message, Mail2TgEnv);
+      }
     }
     if (isGuardian) {
       status.telegram = true;
@@ -138,7 +141,6 @@ async function emailHandler(message, env, ctx) {
     console.error(e);
   }
 }
-
 
 export default {
   fetch: fetchHandler,
