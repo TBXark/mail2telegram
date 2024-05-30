@@ -65,18 +65,11 @@ export async function parseEmail(message, maxSize, maxSizePolicy) {
   };
   let bufferSize = message.rawSize;
   let currentMode = 'untruncate';
-  // let debugMessage = JSON.stringify({
-  //   bufferSize: bufferSize,
-  //   maxSize: maxSize,
-  //   maxSizePolicy: maxSizePolicy,
-  //   result: bufferSize > maxSize,
-  // }, null, 2)
   if (bufferSize > maxSize) {
     switch (maxSizePolicy) {
       case 'unhandled':
         cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
         cache.html = cache.text;
-        // cache.html = debugMessage;
         return cache;
       case 'truncate':
         bufferSize = maxSize;
@@ -90,9 +83,8 @@ export async function parseEmail(message, maxSize, maxSizePolicy) {
     const raw = await streamToArrayBuffer(message.raw, bufferSize);
     const parser = new PostalMime();
     const email = await parser.parse(raw);
-    cache.messageId = email.messageId;
-    cache.subject = email.subject;
-    // cache.subject += `\n${debugMessage}`
+    // cache.messageId = email.messageId;
+    // cache.subject = email.subject;
     if (email.html) {
       cache.html = email.html;
     }
