@@ -97,9 +97,8 @@ async function telegramCommandHandler(message, env) {
     await handlers[command](message);
     return;
   }
-
   // 兼容旧版命令返回默认信息
-  return handleOpenTMACommand(env, '')(message);
+  return handleOpenTMACommand(env, '', `Unknown command: ${command}, try to reinitialize the bot.`)(message);
 }
 
 
@@ -110,34 +109,19 @@ async function telegramCommandHandler(message, env) {
  */
 function handleIDCommand(env) {
   return async (msg) => {
-    const {
-      TELEGRAM_TOKEN,
-      DOMAIN
-    } = env;
-    await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
-      chat_id: msg.chat.id,
-      text: `Your chat ID is ${msg.chat.id}`,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: 'Open Manager',
-              url: `https://${DOMAIN}/tma`,
-            },
-          ],
-        ],
-      }
-    });
-  };
+    const text = `Your chat ID is ${msg.chat.id}`
+    return await handleOpenTMACommand(env, '', text)(msg)
+  }
 }
 
 /**
  * Opens the TMA for the user.
  * @param {Object} env - The environment object containing the Telegram token.
  * @param {string} mode - TMA mode.
+ * @param {string} text - The text to be displayed.
  * @returns {function(TelegramMessage)} - An async function that takes a message object and sends the TMA link to the user.
  */
-function handleOpenTMACommand(env, mode) {
+function handleOpenTMACommand(env, mode, text) {
   return async (msg) => {
     const {
       TELEGRAM_TOKEN,
@@ -145,7 +129,7 @@ function handleOpenTMACommand(env, mode) {
     } = env;
     await sendTelegramRequest(TELEGRAM_TOKEN, 'sendMessage', {
       chat_id: msg.chat.id,
-      text: TmaModeDescription[mode] || 'Address Manager',
+      text: text || TmaModeDescription[mode] || 'Address Manager',
       reply_markup: {
         inline_keyboard: [
           [
