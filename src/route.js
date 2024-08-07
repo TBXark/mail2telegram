@@ -77,7 +77,7 @@ function addressParamsCheck(address, type) {
     if (!address || !type) {
       throw new HTTPError(400, 'Missing address or type');
     }
-    if (![BLOCK_LIST_KEY, WHITE_LIST_KEY].includes(type)) {
+    if (keyMap[type] === undefined) {
         throw new HTTPError(400, 'Invalid type');
     }
     return keyMap[type];
