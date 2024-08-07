@@ -70,7 +70,7 @@ mail2telegram
 | MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份 |
 | OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮 |
 | OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions` |
-| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-3.5-turbo`                       |
+| OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-4o-mini`                       |
 | SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                       |
 | GUARDIAN_MODE          | 守护模式，默认关闭，若要开启则填入`true`                     |
 | MAX_EMAIL_SIZE         | 最大邮件大小，单位字节，超过此大小的邮件将会根据`MAX_EMAIL_SIZE_POLICY`判断处理逻辑。主要作用是防止邮件附件过大导致worker函数超时。默认为512*1024 |

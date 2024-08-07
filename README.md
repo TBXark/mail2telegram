@@ -69,7 +69,7 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 | MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up. |
 | OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear. |
 | OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions` |
-| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-3.5-turbo`         |
+| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-4o-mini`         |
 | SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english` |
 | GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`. |
 | MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024. |

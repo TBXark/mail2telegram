@@ -109,9 +109,9 @@ async function telegramCommandHandler(message, env) {
  */
 function handleIDCommand(env) {
   return async (msg) => {
-    const text = `Your chat ID is ${msg.chat.id}`
-    return await handleOpenTMACommand(env, '', text)(msg)
-  }
+    const text = `Your chat ID is ${msg.chat.id}`;
+    return await handleOpenTMACommand(env, '', text)(msg);
+  };
 }
 
 /**

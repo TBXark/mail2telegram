@@ -150,7 +150,7 @@ export async function renderEmailSummaryMode(mail, env) {
   } = env;
   const req = renderEmailDetail('', mail.id);
   endpoint = endpoint || 'https://api.openai.com/v1/chat/completions';
-  model = model || 'gpt-3.5-turbo';
+  model = model || 'gpt-4o-mini';
   targetLang = targetLang || 'english';
   const prompt = `Summarize the following text in approximately 50 words with ${targetLang}\n\n${mail.text}`;
   req.text = await sendOpenAIRequest(key, endpoint, model, prompt);

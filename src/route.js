@@ -27,6 +27,15 @@ export function createRouter(env) {
     DB,
   } = env;
 
+  router.get('/', async () => {
+    return new Response(null, {
+        status: 302,
+        headers: {
+            'location': 'https://github.com/TBXark/mail2telegram',
+        },
+        });
+   });
+
   router.get('/init', async () => {
     const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
@@ -86,7 +95,7 @@ export function createRouter(env) {
   const keyMap = {
     block: BLOCK_LIST_KEY,
     white: WHITE_LIST_KEY,
-}
+};
 
   router.post('/api/address/add', withTelegramAuthenticated, async (req) => {
     const {address, type} = await req.json();
