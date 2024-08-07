@@ -1,3 +1,7 @@
+/**
+ * Get the global object
+ * @returns {object}
+ */
 function getGlobal() {
   if (typeof self !== 'undefined') {
     return self;

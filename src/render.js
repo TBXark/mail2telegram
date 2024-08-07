@@ -3,12 +3,11 @@ import {checkAddressStatus} from './dao.js';
 
 /**
  * Sends a request to the OpenAI API and returns the first choice.
- *
  * @param {string} key - The API key for authentication.
  * @param {string} endpoint - The endpoint URL for the OpenAI API.
  * @param {string} model - The name of the model to use for completion.
  * @param {string} prompt - The user's prompt for generating completion.
- * @return {Promise<string>} The completed text from the OpenAI API response.
+ * @returns {Promise<string>} The completed text from the OpenAI API response.
  */
 async function sendOpenAIRequest(key, endpoint, model, prompt) {
   const resp = await fetch(endpoint, {
@@ -38,10 +37,9 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
 
 /**
  * Render the email list  mode.
- *
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
  */
 export async function renderEmailListMode(mail, env) {
   const {
@@ -97,10 +95,9 @@ To\t\t:\t${mail.to}
 
 /**
  * Render the email detail.
- *
  * @param {string} text - The email text.
  * @param {string} id - The email ID.
- * @return {TelegramSendMessageRequest} - The rendered email detail.
+ * @returns {TelegramSendMessageRequest} - The rendered email detail.
  */
 function renderEmailDetail(text, id) {
   return {
@@ -125,10 +122,10 @@ function renderEmailDetail(text, id) {
 
 /**
  * Render the email preview  mode.
- *
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object. */
+ * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ */
 // eslint-disable-next-line no-unused-vars
 export async function renderEmailPreviewMode(mail, env) {
   return renderEmailDetail(mail.text.substring(0, 4096), mail.id);
@@ -136,10 +133,9 @@ export async function renderEmailPreviewMode(mail, env) {
 
 /**
  * Render the email summary  mode.
- *
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
  */
 export async function renderEmailSummaryMode(mail, env) {
   let {
@@ -160,10 +156,9 @@ export async function renderEmailSummaryMode(mail, env) {
 
 /**
  * Render the email debug  mode.
- *
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @return {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
  */
 export async function renderEmailDebugMode(mail, env) {
   const addresses = [

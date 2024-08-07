@@ -47,24 +47,25 @@
 
 /**
  * @typedef {object} TelegramMessage
- * @property {number| string} chat.id
- * @property {number | string} from.id
- * @property {number} message_id
- * @property {string} text
- *
+ * @property {object} chat - The chat object.
+ * @property {number| string} chat.id - The chat ID.
+ * @property {object} from - The sender object.
+ * @property {number | string} from.id - The sender ID.
+ * @property {number} message_id - The message ID.
+ * @property {string} text - The text content of the message.
  */
 
 /**
  * @typedef {object} TelegramCallbackQuery
- * @property {string} id
- * @property {string} data
- * @property {TelegramMessage} message
+ * @property {string} id - The callback query ID.
+ * @property {string} data - The callback data.
+ * @property {TelegramMessage} message - The message object.
  */
 
 /**
  * @typedef {object} TelegramWebhookRequest
- * @property {TelegramMessage} [message]
- * @property {TelegramCallbackQuery} [callback_query]
+ * @property {TelegramMessage} [message] - The message object.
+ * @property {TelegramCallbackQuery} [callback_query] - The callback query object.
  */
 
 /**
@@ -83,6 +84,9 @@
  * @property {string} text - The text of the button.
  * @property {string} [callback_data] - The callback data of the button.
  * @property {string} [url] - The URL of the button.
+ */
+
+/**
  * @typedef {object} TelegramSendMessageRequest
  * @property {number} chat_id - The chat ID.
  * @property {string} text - The text content of the message.

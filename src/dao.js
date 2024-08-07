@@ -5,9 +5,8 @@ export const WHITE_LIST_KEY = 'WHITE_LIST';
 
 /**
  * Parse json string to array.
- *
  * @param {string} raw - The raw string.
- * @return {string[]} The parsed array.
+ * @returns {string[]} The parsed array.
  */
 function loadArrayFromRaw(raw) {
   if (!raw) {
@@ -28,10 +27,9 @@ function loadArrayFromRaw(raw) {
 
 /**
  * Loads a list from the database.
- *
  * @param {Database} db - The database object.
  * @param {string} key - The key of the database.
- * @return {Promise<string[]>}
+ * @returns {Promise<string[]>} 
  */
 export async function loadArrayFromDB(db, key) {
   try {
@@ -45,11 +43,10 @@ export async function loadArrayFromDB(db, key) {
 
 /**
  * Adds an address to the database.
- *
  * @param {Database} db - The database object.
  * @param {string} address - The address to be added.
  * @param {string} type - The type of the address.
- * @return {Promise<void>}
+ * @returns {Promise<void>}
  */
 export async function addAddress(db, address, type) {
   const list = await loadArrayFromDB(db, type);
@@ -59,11 +56,10 @@ export async function addAddress(db, address, type) {
 
 /**
  * Removes an address from the database.
- *
  * @param {Database} db - The database object.
  * @param {string} address - The address to be removed.
  * @param {string} type - The type of the address.
- * @return {Promise<void>}
+ * @returns {Promise<void>}
  */
 export async function removeAddress(db, address, type) {
   const list = await loadArrayFromDB(db, type);
@@ -74,10 +70,9 @@ export async function removeAddress(db, address, type) {
 
 /**
  * Checks if the given message should be blocked.
- *
  * @param {EmailMessage} message - The message to be checked.
  * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
- * @return {Promise<boolean>} A promise that resolves to true if the message can be handled.
+ * @returns {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
 export async function isMessageBlock(message, env) {
   const addresses = [
@@ -160,11 +155,11 @@ export async function checkAddressStatus(addresses, env) {
 }
 
 /**
- *
+ * Loads the status of the email.
  * @param {string} id - The ID of the email.
  * @param {boolean} guardian - The guardian mode.
  * @param {Database} db - The database object.
- * @return {Promise<EmailHandleStatus>} The mail status.
+ * @returns {Promise<EmailHandleStatus>} The mail status.
  */
 export async function loadMailStatus(id, guardian, db) {
   const defaultStatus = {
@@ -188,7 +183,7 @@ export async function loadMailStatus(id, guardian, db) {
  * Loads the cache of the email.
  * @param {string} id - The ID of the email.
  * @param {Database} db - The database object.
- * @return {Promise<EmailCache|null>}
+ * @returns {Promise<EmailCache|null>}
  */
 export async function loadMailCache(id, db) {
   try {

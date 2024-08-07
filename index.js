@@ -7,11 +7,10 @@ import { createRouter} from './src/route.js';
 
 /**
  * Handles the fetch request.
- *
  * @param {Request} request - The fetch request object.
  * @param {Environment} env - The environment object.
  * @param {object} ctx - The context object.
- * @return {Promise<Response>} The fetch response.
+ * @returns {Promise<Response>} The fetch response.
  */
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
@@ -26,11 +25,10 @@ async function fetchHandler(request, env, ctx) {
 
 /**
  * Handles incoming email messages.
- *
  * @param {EmailMessage} message - The email message object.
  * @param {Environment} env - The environment variables.
  * @param {object} ctx - The context object.
- * @return {Promise<void>} - A promise that resolves when the email is processed.
+ * @returns {Promise<void>} - A promise that resolves when the email is processed.
  */
 // eslint-disable-next-line no-unused-vars
 async function emailHandler(message, env, ctx) {

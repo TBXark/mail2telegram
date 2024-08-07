@@ -5,9 +5,8 @@ import './types.js';
 
 /**
  * Generates a random ID of the specified length.
- *
  * @param {number} length - The length of the random ID to generate.
- * @return {string} - The randomly generated ID.
+ * @returns {string} - The randomly generated ID.
  */
 function randomId(length) {
   const elements =
@@ -21,10 +20,9 @@ function randomId(length) {
 
 /**
  * Converts a ReadableStream to an ArrayBuffer.
- *
  * @param {ReadableStream} stream - The ReadableStream to convert.
  * @param {number} streamSize - The size of the stream.
- * @return {Promise<Uint8Array>} The converted ArrayBuffer.
+ * @returns {Promise<Uint8Array>} The converted ArrayBuffer.
  */
 async function streamToArrayBuffer(stream, streamSize) {
   const result = new Uint8Array(streamSize);
@@ -49,11 +47,10 @@ async function streamToArrayBuffer(stream, streamSize) {
 
 /**
  * Parse an email message.
- *
  * @param {EmailMessage} message - The email message to be parsed.
  * @param {number} maxSize - The maximum size of the email in bytes.
  * @param {string} maxSizePolicy - The policy of emails that exceed the maximum size.
- * @return {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
+ * @returns {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
  */
 export async function parseEmail(message, maxSize, maxSizePolicy) {
   const id = randomId(32);

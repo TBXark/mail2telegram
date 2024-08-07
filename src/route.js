@@ -11,6 +11,11 @@ class HTTPError extends Error {
   }
 }
 
+/**
+ * Get the status code from the error.
+ * @param {Error} e - The error object.
+ * @returns {number} The status code.
+ */
 function statusCodeFromError(e) {
     if (e instanceof HTTPError) {
         return e.status;
@@ -18,6 +23,12 @@ function statusCodeFromError(e) {
     return 500;
 }
 
+/**
+ * 
+ * Create the router.
+ * @param {Environment} env - The environment object.
+ * @returns {import('itty-router').RouterType} The router object.
+ */
 export function createRouter(env) {
   const router = Router();
   const {

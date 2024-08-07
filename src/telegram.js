@@ -3,6 +3,10 @@ import {parseEmail} from './parse.js';
 import './types.js';
 import {loadMailCache} from './dao.js';
 
+/**
+ * @callback TelegramMessageHandler
+ * @param {TelegramMessage} message - The Telegram message object.
+ */
 
 const TmaModeDescription = {
   test: 'Test an email address',
@@ -12,11 +16,10 @@ const TmaModeDescription = {
 
 /**
  * Sends a Telegram API request.
- *
  * @param {string} token - The Telegram bot token.
  * @param {string} method - The API method to call.
  * @param {object} body - The JSON body of the request.
- * @return {Promise<object>} A promise that resolves to the response from the API.
+ * @returns {Promise<object>} A promise that resolves to the response from the API.
  */
 export async function sendTelegramRequest(token, method, body) {
   const resp = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -33,10 +36,9 @@ export async function sendTelegramRequest(token, method, body) {
 
 /**
  * Sends an email message to Telegram.
- *
  * @param {EmailMessage} message - The email message to be sent.
  * @param {Environment} env - The environment variables.
- * @return {Promise<void>} A promise that resolves when the email message is sent successfully.
+ * @returns {Promise<void>} A promise that resolves when the email message is sent successfully.
  */
 export async function sendMailToTelegram(message, env) {
   const {
@@ -68,12 +70,12 @@ export async function sendMailToTelegram(message, env) {
 * @property {Array<CommandHandlerMiddleware>} middlewares - The middlewares for the command.
 * @property {Map<string, CommandHandler>} handlers - The handlers for the command.
 */
+
 /**
  * Handles the incoming Telegram command
- *
  * @param {TelegramMessage} message - The Telegram message object.
  * @param {object} env - The environment object.
- * @return {Promise<void>} The fetch response.
+ * @returns {Promise<void>} The fetch response.
  */
 async function telegramCommandHandler(message, env) {
   let [command] = message.text.split(/ (.*)/);
@@ -84,7 +86,7 @@ async function telegramCommandHandler(message, env) {
   command = command.substring(1);
   /**
    * @type {Array<CommandHandlerGroup>}
-   * */
+   */
   const handlers = {
     id: handleIDCommand(env),
     start: handleIDCommand(env),
@@ -104,8 +106,8 @@ async function telegramCommandHandler(message, env) {
 
 /**
  * Handles the ID command by sending the chat ID to the user.
- * @param {Object} env - The environment object containing the Telegram token.
- * @returns {function(TelegramMessage)} - An async function that takes a message object and sends the chat ID to the user.
+ * @param {object} env - The environment object containing the Telegram token.
+ * @returns {TelegramMessageHandler} - An async function that takes a message object and sends the chat ID to the user.
  */
 function handleIDCommand(env) {
   return async (msg) => {
@@ -116,10 +118,10 @@ function handleIDCommand(env) {
 
 /**
  * Opens the TMA for the user.
- * @param {Object} env - The environment object containing the Telegram token.
+ * @param {object} env - The environment object containing the Telegram token.
  * @param {string} mode - TMA mode.
  * @param {string} text - The text to be displayed.
- * @returns {function(TelegramMessage)} - An async function that takes a message object and sends the TMA link to the user.
+ * @returns {TelegramMessageHandler} - An async function that takes a message object and sends the TMA link to the user.
  */
 function handleOpenTMACommand(env, mode, text) {
   return async (msg) => {
@@ -149,10 +151,9 @@ function handleOpenTMACommand(env, mode, text) {
 
 /**
  * Handles the incoming Telegram callback.
- *
  * @param {TelegramCallbackQuery} callback - The Telegram callback object.
  * @param {object} env - The environment object.
- * @return {Promise<void>} The fetch response.
+ * @returns {Promise<void>} The fetch response.
  */
 async function telegramCallbackHandler(callback, env) {
   const {
@@ -216,10 +217,9 @@ async function telegramCallbackHandler(callback, env) {
 
 /**
  * Handles the incoming Telegram webhook request.
- *
  * @param {Request} req - The fetch request object.
  * @param {object} env - The environment object.
- * @return {Promise<void>} The fetch response.
+ * @returns {Promise<void>} The fetch response.
  */
 export async function telegramWebhookHandler(req, env) {
   /**
@@ -236,8 +236,8 @@ export async function telegramWebhookHandler(req, env) {
 
 /**
  * Bind telegram commands.
- * @param {string} token
- * @return {Promise<any>}
+ * @param {string} token - The Telegram bot token.
+ * @returns {Promise<any>}
  */
 export async function setMyCommands(token) {
   const body = {
