@@ -3,11 +3,6 @@ import {parseEmail} from './parse.js';
 import './types.js';
 import {loadMailCache} from './dao.js';
 
-/**
- * @callback TelegramMessageHandler
- * @param {TelegramMessage} message - The Telegram message object.
- */
-
 const TmaModeDescription = {
   test: 'Test an email address',
   white: 'Manage the white list',
@@ -62,14 +57,14 @@ export async function sendMailToTelegram(message, env) {
   }
 }
 
-/*
-*
-* @typedef {function(TelegramMessage): Promise<void>} CommandHandlerMiddleware
-* @typedef {function(TelegramMessage): Promise<void>} CommandHandler
-* @typedef {Object} CommandHandlerGroup
-* @property {Array<CommandHandlerMiddleware>} middlewares - The middlewares for the command.
-* @property {Map<string, CommandHandler>} handlers - The handlers for the command.
-*/
+/**
+ * @typedef {function(TelegramMessage): Promise<Response> } TelegramMessageHandler
+ * @typedef {function(TelegramMessage): Promise<void>} CommandHandlerMiddleware
+ * @typedef {function(TelegramMessage): Promise<void>} CommandHandler
+ * @typedef {object} CommandHandlerGroup
+ * @property {Array<CommandHandlerMiddleware>} middlewares - The middlewares for the command.
+ * @property {Map<string, CommandHandler>} handlers - The handlers for the command.
+ */
 
 /**
  * Handles the incoming Telegram command

@@ -31,7 +31,7 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
     }),
   });
   if (!resp.ok) {
-    throw new Error(`OpenAI API request failed: ${resp.status}`)
+    throw new Error(`OpenAI API request failed: ${resp.status}`);
   }
   const body = await resp.json();
   return body?.choices?.[0]?.message?.content || '';
