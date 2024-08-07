@@ -48,224 +48,237 @@
 </head>
 
 <body>
-<div id="app">
-    <h3 class="growContainer">
-        List Mode
-        <select class="growItem" style="margin-left: 10px;" v-model="mode">
-            <option value="block">Block list</option>
-            <option value="white">White list</option>
-            <option value="test">Test address</option>
-        </select>
-    </h3>
-    <p v-if="tipMessage">{{ tipMessage }}</p>
-    <table>
-        <thead>
-        <tr>
-            <th>address</th>
-            <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
-        </tr>
-        </thead>
-        <tbody v-if="mode!=='test'">
-        <tr>
-            <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-                <button @click="addAddress">Add</button>
-            </td>
-        </tr>
-        <tr :key="index" v-for="(address, index) in addresses">
-            <td>{{ address }}</td>
-            <td>
-                <button @click="removeAddress(index)">Delete</button>
-            </td>
-        </tr>
-        </tbody>
-        <tbody v-else>
-        <tr>
-            <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
-            </td>
-            <td>
-                <button @click="testAddress">Test</button>
-            </td>
-        </tr>
-        <tr :key="index" v-for="(item, index) in addresses">
-            <td>{{ item.address }}</td>
-            <td>{{ item.result }}</td>
-        </tr>
-        </tbody>
-    </table>
-</div>
+    <div id="app">
+        <h3 class="growContainer">
+            List Mode
+            <select class="growItem" style="margin-left: 10px;" v-model="mode">
+                <option value="block">Block list</option>
+                <option value="white">White list</option>
+                <option value="test">Test address</option>
+            </select>
+        </h3>
+        <p v-if="tipMessage">{{ tipMessage }}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>address</th>
+                    <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
+                </tr>
+            </thead>
+            <tbody v-if="mode!=='test'">
+                <tr>
+                    <td class="growContainer">
+                        <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+                    </td>
+                    <td>
+                        <button @click="addAddress">Add</button>
+                    </td>
+                </tr>
+                <tr :key="index" v-for="(address, index) in addresses">
+                    <td>{{ address }}</td>
+                    <td>
+                        <button @click="removeAddress(index)">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+            <tbody v-else>
+                <tr>
+                    <td class="growContainer">
+                        <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+                    </td>
+                    <td>
+                        <button @click="testAddress">Test</button>
+                    </td>
+                </tr>
+                <tr :key="index" v-for="(item, index) in addresses">
+                    <td>{{ item.address }}</td>
+                    <td>{{ item.result }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-<script>
-  const {createApp, computed, ref, onMounted, watch} = Vue;
+    <script>
+        const { createApp, computed, ref, onMounted, watch } = Vue;
 
 
-  const addAddress = async (address, type, tma) => {
-    return fetch('/api/address/add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `tma ${tma}`,
-      },
-      body: JSON.stringify({
-        address,
-        type,
-      }),
-    });
-  };
+        class Client {
 
-  const removeAddress = async (address, type, tma) => {
-    return fetch('/api/address/remove', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `tma ${tma}`,
-      },
-      body: JSON.stringify({
-        address,
-        type,
-      }),
-    });
-  };
+            constructor(tma) {
+                this.tma = tma;
+                this.addAddress = this.addAddress.bind(this);
+                this.removeAddress = this.removeAddress.bind(this);
+                this.loadAddress = this.loadAddress.bind(this);
+            }
 
-  const loadAddress = async (tma) => {
-    return fetch('/api/address/list', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `tma ${tma}`,
-      },
-    });
-  };
+            async request(path, method, body) {
+                const res = fetch(path, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `tma ${this.tma}`,
+                    },
+                    body: JSON.stringify(body),
+                })
+                    .then(response => response.json());
+                if (res.error) {
+                    throw new Error(res.error);
+                }
+                return res;
+            }
 
-  createApp({
-    setup() {
+            async addAddress(address, type) {
+                return this.request('/api/address/add', 'POST', {
+                    address,
+                    type,
+                });
+            }
 
-      const urlParams = new URLSearchParams(window.location.search);
+            async removeAddress(address, type) {
+                return this.request('/api/address/remove', 'POST', {
+                    address,
+                    type,
+                });
+            }
 
-      const blockList = ref([]);
-      const whiteList = ref([]);
-      const testList = ref([]);
-      const tipMessage = ref('');
-      const inputAddress = ref('');
-      const mode = ref(urlParams.get('mode') || 'block');
-      const tmaParams = ref(null);
-
-      const addresses = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return blockList.value;
-          case 'white':
-            return whiteList.value;
-          case 'test':
-            return testList.value;
+            async loadAddress(tma) {
+                return this.request('/api/address/list', 'GET');
+            }
         }
-      });
 
-      const inputPlaceholder = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return 'New block address regex';
-          case 'white':
-            return 'New white address regex';
-          case 'test':
-            return 'Test address';
-        }
-      });
+        createApp({
+            setup() {
 
-      const addAddress = async () => {
-        if (!inputAddress.value) {
-          return;
-        }
-        const value = inputAddress.value.trim();
-        await addAddress(value, mode.value, tmaParams.value);
-        inputAddress.value = '';
-        switch (mode.value) {
-          case 'block':
-            blockList.value.push(value);
-            break;
-          case 'white':
-            whiteList.value.push(value);
-            break;
-          case 'test':
-            break;
-        }
-      };
+                const urlParams = new URLSearchParams(window.location.search);
 
-      const removeAddress = (index) => {
-        const value = addresses.value[index];
-        removeAddress(value, mode.value, tmaParams.value);
-        switch (mode.value) {
-          case 'block':
-            blockList.value.splice(index, 1);
-            break;
-          case 'white':
-            whiteList.value.splice(index, 1);
-            break;
-          case 'test':
-            break;
-        }
-      };
+                const blockList = ref([]);
+                const whiteList = ref([]);
+                const testList = ref([]);
+                const tipMessage = ref('');
+                const inputAddress = ref('');
+                const mode = ref(urlParams.get('mode') || 'block');
+                const client = new Client('');
 
-      const testAddress = () => {
-        const test = [];
-        const value = inputAddress.value.trim();
-        for (const item of blockList.value) {
-          console.log(`item: ${item}, value: ${value}`);
-          if (new RegExp(item).test(value)) {
-            test.push({
-              address: item,
-              result: 'block',
-            });
-          }
-        }
-        for (const item of whiteList.value) {
-          console.log(`item: ${item}, value: ${value}`);
-          if (new RegExp(item).test(value)) {
-            test.push({
-              address: item,
-              result: 'white',
-            });
-          }
-        }
-        testList.value = test;
-      };
+                const addresses = computed(() => {
+                    switch (mode.value) {
+                        case 'block':
+                            return blockList.value;
+                        case 'white':
+                            return whiteList.value;
+                        case 'test':
+                            return testList.value;
+                    }
+                });
 
-      watch(mode, () => {
-        inputAddress.value = '';
-      });
+                const inputPlaceholder = computed(() => {
+                    switch (mode.value) {
+                        case 'block':
+                            return 'New block address regex';
+                        case 'white':
+                            return 'New white address regex';
+                        case 'test':
+                            return 'Test address';
+                    }
+                });
+
+                const addAddress = async () => {
+                    try {
+                        if (!inputAddress.value) {
+                            return;
+                        }
+                        const value = inputAddress.value.trim();
+                        await client.addAddress(value, mode.value);
+
+                        inputAddress.value = '';
+                        switch (mode.value) {
+                            case 'block':
+                                blockList.value.push(value);
+                                break;
+                            case 'white':
+                                whiteList.value.push(value);
+                                break;
+                            case 'test':
+                                break;
+                        }
+                    } catch (error) {
+                        tipMessage.value = error;
+                    }
+                };
+
+                const removeAddress = async (index) => {
+                    try {
+                        const value = addresses.value[index];
+                        await client.removeAddress(value, mode.value);
+                        switch (mode.value) {
+                            case 'block':
+                                blockList.value.splice(index, 1);
+                                break;
+                            case 'white':
+                                whiteList.value.splice(index, 1);
+                                break;
+                            case 'test':
+                                break;
+                        }
+                    } catch (error) {
+                        tipMessage.value = error;
+                    }
+                };
+
+                const testAddress = () => {
+                    const test = [];
+                    const value = inputAddress.value.trim();
+                    for (const item of blockList.value) {
+                        console.log(`item: ${item}, value: ${value}`);
+                        if (new RegExp(item).test(value)) {
+                            test.push({
+                                address: item,
+                                result: 'block',
+                            });
+                        }
+                    }
+                    for (const item of whiteList.value) {
+                        console.log(`item: ${item}, value: ${value}`);
+                        if (new RegExp(item).test(value)) {
+                            test.push({
+                                address: item,
+                                result: 'white',
+                            });
+                        }
+                    }
+                    testList.value = test;
+                };
+
+                watch(mode, () => {
+                    inputAddress.value = '';
+                });
 
 
-      onMounted(async () => {
-        try {
-          const {initDataRaw} = window.telegramApps.sdk.retrieveLaunchParams();
-          tmaParams.value = initDataRaw;
-          const response = await loadAddress(initDataRaw);
-          const {block, white, error} = await response.json();
-          blockList.value = block;
-          whiteList.value = white;
-          tipMessage.value = error;
-        } catch (error) {
-          tipMessage.value = error.message;
-        }
-      });
+                onMounted(async () => {
+                    try {
+                        const { initDataRaw } = window.telegramApps.sdk.retrieveLaunchParams();
+                        client.tma = initDataRaw;
+                        const { block, white } = await client.loadAddress();
+                        blockList.value = block;
+                        whiteList.value = white;
+                    } catch (error) {
+                        tipMessage.value = error.message;
+                    }
+                });
 
-      return {
-        addresses,
-        tipMessage,
-        inputAddress,
-        inputPlaceholder,
-        mode,
-        addAddress,
-        removeAddress,
-        testAddress,
-      };
+                return {
+                    addresses,
+                    tipMessage,
+                    inputAddress,
+                    inputPlaceholder,
+                    mode,
+                    addAddress,
+                    removeAddress,
+                    testAddress,
+                };
 
-    },
-  }).mount('#app');
-</script>
+            },
+        }).mount('#app');
+    </script>
 </body>
 
 </html>

@@ -52,13 +52,9 @@ export async function loadArrayFromDB(db, key) {
  * @return {Promise<void>}
  */
 export async function addAddress(db, address, type) {
-  try {
-    const list = await loadArrayFromDB(db, type);
-    list.unshift(address);
-    await db.put(type, JSON.stringify(list));
-  } catch (e) {
-    console.error(e);
-  }
+  const list = await loadArrayFromDB(db, type);
+  list.unshift(address);
+  await db.put(type, JSON.stringify(list));
 }
 
 /**
@@ -70,13 +66,9 @@ export async function addAddress(db, address, type) {
  * @return {Promise<void>}
  */
 export async function removeAddress(db, address, type) {
-  try {
-    const list = await loadArrayFromDB(db, type);
-    const result = list.filter((item) => item !== address);
-    await db.put(type, JSON.stringify(result));
-  } catch (e) {
-    console.error(e);
-  }
+  const list = await loadArrayFromDB(db, type);
+  const result = list.filter((item) => item !== address);
+  await db.put(type, JSON.stringify(result));
 }
 
 

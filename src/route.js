@@ -4,6 +4,19 @@ import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddres
 import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
 import {validate} from '@telegram-apps/init-data-node/web';
 
+class HTTPError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function statusCodeFromError(e) {
+    if (e instanceof HTTPError) {
+        return e.status;
+    }
+    return 500;
+}
 
 export function createRouter(env) {
   const router = Router();
@@ -21,6 +34,9 @@ export function createRouter(env) {
     const commands = await setMyCommands(TELEGRAM_TOKEN);
     return new Response(JSON.stringify({webhook, commands}));
   });
+
+
+  /// Telegram Mini Apps
 
   router.get('/tma', async () => {
     return new Response(tmaHTML, {
@@ -60,35 +76,44 @@ export function createRouter(env) {
 
   const addressParamsCheck = (address, type) => {
     if (!address || !type) {
-      return new Response(JSON.stringify({
-        error: 'Invalid request',
-      }), {status: 400});
+      throw new HTTPError(400, 'Missing address or type');
     }
     if (![BLOCK_LIST_KEY, WHITE_LIST_KEY].includes(type)) {
-      return new Response(JSON.stringify({
-        error: 'Invalid type',
-      }), {status: 400});
+        throw new HTTPError(400, 'Invalid type');
     }
   };
 
+  const keyMap = {
+    block: BLOCK_LIST_KEY,
+    white: WHITE_LIST_KEY,
+}
+
   router.post('/api/address/add', withTelegramAuthenticated, async (req) => {
     const {address, type} = await req.json();
-    const error = addressParamsCheck(address, type);
-    if (error) {
-      return error;
+    try {
+        const key = keyMap[type];
+        addressParamsCheck(address, key);
+        await addAddress(DB, address, key);
+        return new Response('{}');
+    } catch (e) {
+        return new Response(JSON.stringify({
+          error: e.message,
+        }), {status: statusCodeFromError(e)});
     }
-    await addAddress(address, type, env);
-    return new Response('OK');
   });
 
   router.post('/api/address/remove', withTelegramAuthenticated, async (req) => {
     const {address, type} = await req.json();
-    const error = addressParamsCheck(address, type);
-    if (error) {
-      return error;
+    try {
+        const key = keyMap[type];
+        addressParamsCheck(address, key);
+        await removeAddress(DB, address, key);
+        return new Response('{}');
+    } catch (e) {
+        return new Response(JSON.stringify({
+            error: e.message,
+          }), {status: statusCodeFromError(e)});
     }
-    await removeAddress(address, type, env);
-    return new Response('OK');
   });
 
   router.get('/api/address/list', withTelegramAuthenticated, async () => {
@@ -97,6 +122,7 @@ export function createRouter(env) {
     return new Response(JSON.stringify({block, white}));
   });
 
+  /// Wenbooh
 
   router.post('/telegram/:token/webhook', async (req) => {
     if (req.params.token !== TELEGRAM_TOKEN) {
@@ -109,6 +135,8 @@ export function createRouter(env) {
     }
     return new Response('OK');
   });
+
+  /// Preview
 
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
