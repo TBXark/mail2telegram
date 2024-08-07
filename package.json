@@ -11,14 +11,14 @@
   "homepage": "https://github.com/TBXark/mail2telegram",
   "description": "Forward email to telegram",
   "scripts": {
-    "start": "node index.js",
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
-    "build": "esbuild index.js --bundle --minify --outfile=./build/index.js --format=esm",
+    "build": "node esbuild.config.js",
     "lint": "eslint --fix index.js src"
   },
   "license": "MIT",
   "dependencies": {
+    "@telegram-apps/init-data-node": "^1.0.4",
     "html-to-text": "^9.0.5",
     "itty-router": "^4.0.23",
     "postal-mime": "^2.0.1"

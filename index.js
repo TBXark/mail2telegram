@@ -1,7 +1,8 @@
-import {Router} from 'itty-router';
-import {sendMailToTelegram, sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './src/telegram.js';
-import {isMessageBlock, loadMailCache, loadMailStatus} from './src/dao.js';
+import './src/polyfill.js';
 import './src/types.js';
+import {sendMailToTelegram} from './src/telegram.js';
+import {isMessageBlock, loadMailStatus} from './src/dao.js';
+import { createRouter} from './src/route.js';
 
 
 /**
@@ -14,56 +15,7 @@ import './src/types.js';
  */
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
-   
-  const router = Router();
-  const {
-    TELEGRAM_TOKEN,
-    DOMAIN,
-    DB,
-  } = env;
-
-  router.get('/init', async () => {
-    const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
-      url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
-    });
-    const commands = await setMyCommands(TELEGRAM_TOKEN);
-    return new Response(JSON.stringify({webhook, commands}));
-  });
-
-  router.post('/telegram/:token/webhook', async (req) => {
-    if (req.params.token !== TELEGRAM_TOKEN) {
-      return new Response('Invalid token');
-    }
-    try {
-      await telegramWebhookHandler(req, env);
-    } catch (e) {
-      console.error(e);
-    }
-    return new Response('OK');
-  });
-
-  router.get('/email/:id', async (req) => {
-    const id = req.params.id;
-    const mode = req.query.mode || 'text';
-    const value = await loadMailCache(id, DB);
-    const headers = {};
-    switch (mode) {
-      case 'html':
-        headers['content-type'] = 'text/html; charset=utf-8';
-        break;
-      default:
-        headers['content-type'] = 'text/plain; charset=utf-8';
-        break;
-    }
-    return new Response(value[mode], {
-      headers,
-    });
-  });
-
-  router.all('*', async () => {
-    return new Response('It works!');
-  });
-
+  const router = createRouter(env);  
   return router.handle(request).catch((e) => {
     console.error(e);
     return new Response(e.message, {

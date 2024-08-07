@@ -1,5 +1,8 @@
 import './types.js';
 
+export const BLOCK_LIST_KEY = 'BLOCK_LIST';
+export const WHITE_LIST_KEY = 'WHITE_LIST';
+
 /**
  * Parse json string to array.
  *
@@ -13,7 +16,7 @@ function loadArrayFromRaw(raw) {
   let list = [];
   try {
     list = JSON.parse(raw);
-  // eslint-disable-next-line no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     return [];
   }
@@ -22,6 +25,7 @@ function loadArrayFromRaw(raw) {
   }
   return list;
 }
+
 /**
  * Loads a list from the database.
  *
@@ -40,6 +44,43 @@ export async function loadArrayFromDB(db, key) {
 }
 
 /**
+ * Adds an address to the database.
+ *
+ * @param {Database} db - The database object.
+ * @param {string} address - The address to be added.
+ * @param {string} type - The type of the address.
+ * @return {Promise<void>}
+ */
+export async function addAddress(db, address, type) {
+  try {
+    const list = await loadArrayFromDB(db, type);
+    list.unshift(address);
+    await db.put(type, JSON.stringify(list));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/**
+ * Removes an address from the database.
+ *
+ * @param {Database} db - The database object.
+ * @param {string} address - The address to be removed.
+ * @param {string} type - The type of the address.
+ * @return {Promise<void>}
+ */
+export async function removeAddress(db, address, type) {
+  try {
+    const list = await loadArrayFromDB(db, type);
+    const result = list.filter((item) => item !== address);
+    await db.put(type, JSON.stringify(result));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+
+/**
  * Checks if the given message should be blocked.
  *
  * @param {EmailMessage} message - The message to be checked.
@@ -49,13 +90,13 @@ export async function loadArrayFromDB(db, key) {
 export async function isMessageBlock(message, env) {
   const addresses = [
     message.from,
-    message.to
+    message.to,
   ];
   const res = await checkAddressStatus(addresses, env);
   for (const key in res) {
     switch (res[key]) {
       case 'white':
-        console.log(`Matched white list: ${key}`);  
+        console.log(`Matched white list: ${key}`);
         return false;
       default:
         break;
@@ -104,11 +145,11 @@ export async function checkAddressStatus(addresses, env) {
   const blockList = loadArrayFromRaw(BLOCK_LIST);
   const whiteList = loadArrayFromRaw(WHITE_LIST);
   if (!(LDISABLE_OAD_REGEX_FROM_DB === 'true')) {
-    blockList.push(...(await loadArrayFromDB(DB, 'BLOCK_LIST')));
-    whiteList.push(...(await loadArrayFromDB(DB, 'WHITE_LIST')));
+    blockList.push(...(await loadArrayFromDB(DB, BLOCK_LIST_KEY)));
+    whiteList.push(...(await loadArrayFromDB(DB, WHITE_LIST_KEY)));
   }
-  const result = {}
-  
+  const result = {};
+
   for (const addr of addresses) {
     if (!addr) {
       continue;

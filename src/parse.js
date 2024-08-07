@@ -30,7 +30,8 @@ async function streamToArrayBuffer(stream, streamSize) {
   const result = new Uint8Array(streamSize);
   let bytesRead = 0;
   const reader = stream.getReader();
-   
+
+
   while (true) {
     if (bytesRead >= streamSize) {
       break;

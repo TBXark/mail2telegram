@@ -116,7 +116,7 @@ function renderEmailDetail(text, id) {
           {
             text: 'Delete',
             callback_data: 'delete',
-          }
+          },
         ],
       ],
     },
@@ -168,7 +168,7 @@ export async function renderEmailSummaryMode(mail, env) {
 export async function renderEmailDebugMode(mail, env) {
   const addresses = [
     mail.from,
-    mail.to
+    mail.to,
   ];
   const res = await checkAddressStatus(addresses, env);
   const obj = {
