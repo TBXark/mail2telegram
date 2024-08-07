@@ -102,6 +102,23 @@ export async function isMessageBlock(message, env) {
 }
 
 /**
+ * @param {string} address 
+ * @param {string} pattern 
+ * @returns {boolean}
+ */
+function testAddress(address, pattern) {
+  if (pattern.toLowerCase() === address.toLowerCase()) {
+    return true;
+  }
+  try {
+    const regex = new RegExp(pattern, 'i');
+    return !!regex.test(address);
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Checks the status of an address by matching it against block and white lists.
  * @param {string[]} addresses - The address to be checked.
  * @param {Environment} env - The environment object containing BLOCK_LIST and WHITE_LIST.
@@ -113,12 +130,8 @@ export async function checkAddressStatus(addresses, env) {
       if (!item) {
         continue;
       }
-      if (item === address) {
-        return true;
-      }
-      const regex = new RegExp(item);
-      if (regex.test(address)) {
-        return true;
+      if (testAddress(address, item)) {
+        return true
       }
     }
     return false;

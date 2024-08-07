@@ -185,15 +185,15 @@
                         if (!inputAddress.value) {
                             return;
                         }
-                        const value = inputAddress.value.trim();
-                        await client.addAddress(value, mode.value);
+                        const address = inputAddress.value.trim();
+                        await client.addAddress(address, mode.value);
                         inputAddress.value = '';
                         switch (mode.value) {
                             case 'block':
-                                blockList.value.push(value);
+                                blockList.value.push(address);
                                 break;
                             case 'white':
-                                whiteList.value.push(value);
+                                whiteList.value.push(address);
                                 break;
                             case 'test':
                                 break;
@@ -206,8 +206,8 @@
 
                 const removeAddress = async (index) => {
                     try {
-                        const value = addresses.value[index];
-                        await client.removeAddress(value, mode.value);
+                        const address = addresses.value[index];
+                        await client.removeAddress(address, mode.value);
                         switch (mode.value) {
                             case 'block':
                                 blockList.value.splice(index, 1);
@@ -224,23 +224,33 @@
                     }
                 };
 
+                const testAddressWithPattern = (address, pattern) => {
+                    if (pattern.toLowerCase() === address.toLowerCase()) {
+                        return true;
+                    }
+                    try {
+                        const regex = new RegExp(pattern, 'i');
+                        return !!regex.test(address);
+                    } catch (e) {
+                        return false;
+                    }
+                }
+
                 const testAddress = () => {
                     const test = [];
-                    const value = inputAddress.value.trim();
-                    for (const item of blockList.value) {
-                        console.log(`item: ${item}, value: ${value}`);
-                        if (new RegExp(item).test(value)) {
+                    const address = inputAddress.value.trim();
+                    for (const pattern of blockList.value) {
+                        if (testAddressWithPattern(pattern, address)) {
                             test.push({
-                                address: item,
+                                address: pattern,
                                 result: 'block',
                             });
                         }
                     }
-                    for (const item of whiteList.value) {
-                        console.log(`item: ${item}, value: ${value}`);
-                        if (new RegExp(item).test(value)) {
+                    for (const pattern of whiteList.value) {
+                        if (testAddressWithPattern(pattern, address)) {
                             test.push({
-                                address: item,
+                                address: pattern,
                                 result: 'white',
                             });
                         }
