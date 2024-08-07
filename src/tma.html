@@ -112,7 +112,7 @@
             }
 
             async request(path, method, body) {
-                const res = fetch(path, {
+                const res = await fetch(path, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -187,7 +187,6 @@
                         }
                         const value = inputAddress.value.trim();
                         await client.addAddress(value, mode.value);
-
                         inputAddress.value = '';
                         switch (mode.value) {
                             case 'block':
@@ -200,7 +199,7 @@
                                 break;
                         }
                     } catch (error) {
-                        tipMessage.value = error;
+                        tipMessage.value = `ERROR:` + error;
                     }
                 };
 
@@ -219,7 +218,7 @@
                                 break;
                         }
                     } catch (error) {
-                        tipMessage.value = error;
+                        tipMessage.value = `ERROR:` + error;
                     }
                 };
 
@@ -260,7 +259,7 @@
                         blockList.value = block;
                         whiteList.value = white;
                     } catch (error) {
-                        tipMessage.value = error.message;
+                        tipMessage.value = `ERROR:` + error.message;
                     }
                 });
 

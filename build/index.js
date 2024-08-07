@@ -170,7 +170,7 @@ ${JSON.stringify(a)}`),a}async function Wr(u,e){let{TELEGRAM_TOKEN:t,TELEGRAM_ID
             }
 
             async request(path, method, body) {
-                const res = fetch(path, {
+                const res = await fetch(path, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json',
@@ -245,7 +245,6 @@ ${JSON.stringify(a)}`),a}async function Wr(u,e){let{TELEGRAM_TOKEN:t,TELEGRAM_ID
                         }
                         const value = inputAddress.value.trim();
                         await client.addAddress(value, mode.value);
-
                         inputAddress.value = '';
                         switch (mode.value) {
                             case 'block':
@@ -258,7 +257,7 @@ ${JSON.stringify(a)}`),a}async function Wr(u,e){let{TELEGRAM_TOKEN:t,TELEGRAM_ID
                                 break;
                         }
                     } catch (error) {
-                        tipMessage.value = error;
+                        tipMessage.value = \`ERROR:\` + error;
                     }
                 };
 
@@ -277,7 +276,7 @@ ${JSON.stringify(a)}`),a}async function Wr(u,e){let{TELEGRAM_TOKEN:t,TELEGRAM_ID
                                 break;
                         }
                     } catch (error) {
-                        tipMessage.value = error;
+                        tipMessage.value = \`ERROR:\` + error;
                     }
                 };
 
@@ -318,7 +317,7 @@ ${JSON.stringify(a)}`),a}async function Wr(u,e){let{TELEGRAM_TOKEN:t,TELEGRAM_ID
                         blockList.value = block;
                         whiteList.value = white;
                     } catch (error) {
-                        tipMessage.value = error.message;
+                        tipMessage.value = \`ERROR:\` + error.message;
                     }
                 });
 
