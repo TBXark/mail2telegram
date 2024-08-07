@@ -102,8 +102,8 @@ export async function isMessageBlock(message, env) {
 }
 
 /**
- * @param {string} address 
- * @param {string} pattern 
+ * @param {string} address - The address to be checked.
+ * @param {string} pattern - The pattern to be checked.
  * @returns {boolean}
  */
 function testAddress(address, pattern) {
@@ -113,7 +113,7 @@ function testAddress(address, pattern) {
   try {
     const regex = new RegExp(pattern, 'i');
     return !!regex.test(address);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -131,7 +131,7 @@ export async function checkAddressStatus(addresses, env) {
         continue;
       }
       if (testAddress(address, item)) {
-        return true
+        return true;
       }
     }
     return false;
