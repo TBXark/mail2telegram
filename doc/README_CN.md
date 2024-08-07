@@ -82,23 +82,14 @@ mail2telegram
 > `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
 
 
-## Commands
+## Telegram Mini Apps
 
-| Command                 | Description      |
-|-------------------------|------------------|
-| `/id`                   | 获取您的聊天ID         |
-| `/add_white <email>`    | 将电子邮件地址添加到白名单。   |
-| `/remove_white <email>` | 从白名单中删除一个电子邮件地址。 |
-| `/remove_white_index <index>` | 从白名单中删除一个电子邮件地址，通过索引删除。 |
-| `/list_white`           | 列出白名单中的电子邮件地址。   |
-| `/add_block <email>`    | 将电子邮件地址添加到阻止列表中。 |
-| `/remove_block <email>` | 从阻止列表中删除电子邮件地址。  |
-| `/remove_block_index <index>` | 从阻止列表中删除一个电子邮件地址，通过索引删除。 |
-| `/list_block`           | 列出阻止列表中的电子邮件地址。  |
-| `/test <email>`         | 测试电子邮件地址是否在白名单或阻止列表中。 |
+旧版使用命令方式管理黑白名单已废弃，现在使用小程序的方式管理黑白名单。
+> 使用小程序需要重新调用 `/init` 接口绑定指令
 
-
-> 使用命令需要重新调用 `/init` 接口绑定指令
+| 黑名单 | 白名单 | 名单测试 |
+| :--- | :--- |:--- |
+| ![image](./tma_block_list.png) | ![image](./tma_white_list.png) | ![image](./tma_test_address.png)|
 
 ## 特别说明
 

@@ -80,22 +80,16 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 
 > The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
 
-## Commands
 
-| Command                 | Description                                 |
-|:------------------------|:--------------------------------------------|
-| `/id`                   | Get your chat ID                            |
-| `/add_white <email>`    | Add an email address to the white list      |
-| `/remove_white <email>` | Remove an email address from the white list |
-| `/remove_white_index <index>` | Remove an email address from the white list by index |
-| `/list_white`           | List the email addresses in the white list  |
-| `/add_block <email>`    | Add an email address to the block list      |
-| `/remove_block <email>` | Remove an email address from the block list |
-| `/remove_block_index <index>` | Remove an email address from the block list by index |
-| `/list_block`           | List the email addresses in the block list  |
-| `/test <email>`         | Test the email address                      |
+## Telegram Mini Apps
 
-> Using the command requires re-calling the `/init` interface to bind the instruction.
+The command-based management of black and white lists in the old version has been deprecated. Now, the management of black and white lists is done through a mini-program. 
+
+》 To use the mini-program, you need to re-call the `/init` interface to bind the instructions.
+
+| block list | white list | list test |
+| :--- | :--- |:--- |
+| ![image](./doc/tma_block_list.png) | ![image](./doc/tma_white_list.png) | ![image](./doc/tma_test_address.png)|
 
 
 ## Usage
