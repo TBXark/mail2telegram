@@ -1,3 +1,4 @@
+import './types.js';
 import {Router} from 'itty-router';
 import tmaHTML from './tma.html';
 import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
@@ -24,16 +25,75 @@ function statusCodeFromError(e) {
 }
 
 /**
+ * Create the TMA auth middleware.
+ * @param {Environment} env - The environment object.
+ * @returns {import('itty-router').MiddlewareType}
+ */
+function createTmaAuthMiddleware(env) {
+    const {
+        TELEGRAM_TOKEN,
+        TELEGRAM_ID,
+      } = env;
+   return async (req) => {
+        const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
+        if (authType !== 'tma') {
+          return new Response(JSON.stringify({
+            error: 'Invalid authorization type',
+          }), {status: 401});
+        }
+        try {
+          await validate(authData, TELEGRAM_TOKEN, {
+            expiresIn: 3600,
+          });
+          const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] == 'user')[0][1];
+          const user = JSON.parse(decodeURIComponent(userRaw));
+          for (const id of TELEGRAM_ID.split(',')) {
+            if (id === `${user.id}`) {
+              return;
+            }
+          }
+          return new Response(JSON.stringify({
+            error: 'Permission denied',
+          }), {status: 403});
+        } catch (e) {
+          return new Response(JSON.stringify({
+            error: e.message,
+          }), {status: 401});
+        }
+      };
+}
+
+/**
+ *
+ * @param {string} address - The address to be checked.
+ * @param {string} type - The type of the address.
+ * @returns {string}
+ */
+function addressParamsCheck(address, type) {
+    const keyMap = {
+        block: BLOCK_LIST_KEY,
+        white: WHITE_LIST_KEY,
+    };
+    if (!address || !type) {
+      throw new HTTPError(400, 'Missing address or type');
+    }
+    if (![BLOCK_LIST_KEY, WHITE_LIST_KEY].includes(type)) {
+        throw new HTTPError(400, 'Invalid type');
+    }
+    return keyMap[type];
+  };
+
+/**
  * 
  * Create the router.
  * @param {Environment} env - The environment object.
- * @returns {import('itty-router').RouterType} The router object.
+ * @returns {import('itty-router').RouteHandler} The router object.
  */
 export function createRouter(env) {
   const router = Router();
+  const auth = createTmaAuthMiddleware(env);
   const {
     TELEGRAM_TOKEN,
-    TELEGRAM_ID,
     DOMAIN,
     DB,
   } = env;
@@ -66,53 +126,11 @@ export function createRouter(env) {
     });
   });
 
-  const withTelegramAuthenticated = async (req) => {
-    const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
-    if (authType !== 'tma') {
-      return new Response(JSON.stringify({
-        error: 'Invalid authorization type',
-      }), {status: 401});
-    }
-    try {
-      await validate(authData, TELEGRAM_TOKEN, {
-        expiresIn: 3600,
-      });
-      const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] == 'user')[0][1];
-      const user = JSON.parse(decodeURIComponent(userRaw));
-      for (const id of TELEGRAM_ID.split(',')) {
-        if (id === `${user.id}`) {
-          return;
-        }
-      }
-      return new Response(JSON.stringify({
-        error: 'Permission denied',
-      }), {status: 403});
-    } catch (e) {
-      return new Response(JSON.stringify({
-        error: e.message,
-      }), {status: 401});
-    }
-  };
 
-  const addressParamsCheck = (address, type) => {
-    if (!address || !type) {
-      throw new HTTPError(400, 'Missing address or type');
-    }
-    if (![BLOCK_LIST_KEY, WHITE_LIST_KEY].includes(type)) {
-        throw new HTTPError(400, 'Invalid type');
-    }
-  };
-
-  const keyMap = {
-    block: BLOCK_LIST_KEY,
-    white: WHITE_LIST_KEY,
-};
-
-  router.post('/api/address/add', withTelegramAuthenticated, async (req) => {
+  router.post('/api/address/add', auth, async (req) => {
     const {address, type} = await req.json();
     try {
-        const key = keyMap[type];
-        addressParamsCheck(address, key);
+        const key = addressParamsCheck(address, type);
         await addAddress(DB, address, key);
         return new Response('{}');
     } catch (e) {
@@ -122,11 +140,10 @@ export function createRouter(env) {
     }
   });
 
-  router.post('/api/address/remove', withTelegramAuthenticated, async (req) => {
+  router.post('/api/address/remove', auth, async (req) => {
     const {address, type} = await req.json();
     try {
-        const key = keyMap[type];
-        addressParamsCheck(address, key);
+        const key = addressParamsCheck(address, type);
         await removeAddress(DB, address, key);
         return new Response('{}');
     } catch (e) {
@@ -136,7 +153,7 @@ export function createRouter(env) {
     }
   });
 
-  router.get('/api/address/list', withTelegramAuthenticated, async () => {
+  router.get('/api/address/list', auth, async () => {
     const block = await loadArrayFromDB(DB, BLOCK_LIST_KEY);
     const white = await loadArrayFromDB(DB, WHITE_LIST_KEY);
     return new Response(JSON.stringify({block, white}));
