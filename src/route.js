@@ -1,5 +1,5 @@
 import './types.js';
-import { Router, error, withParams } from 'itty-router'
+import { Router, json, withParams } from 'itty-router';
 import tmaHTML from './tma.html';
 import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
 import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
@@ -11,19 +11,6 @@ class HTTPError extends Error {
     this.status = status;
   }
 }
-
-/**
- * Get the status code from the error.
- * @param {Error} e - The error object.
- * @returns {number} The status code.
- */
-function statusCodeFromError(e) {
-  if (e instanceof HTTPError) {
-    return e.status;
-  }
-  return 500;
-}
-
 /**
  * Create the TMA auth middleware.
  * @param {Environment} env - The environment object.
@@ -37,9 +24,7 @@ function createTmaAuthMiddleware(env) {
   return async (req) => {
     const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
     if (authType !== 'tma') {
-      return new Response(JSON.stringify({
-        error: 'Invalid authorization type',
-      }), {status: 401});
+      throw new HTTPError(401, 'Invalid authorization type');
     }
     try {
       await validate(authData, TELEGRAM_TOKEN, {
@@ -52,13 +37,9 @@ function createTmaAuthMiddleware(env) {
           return;
         }
       }
-      return new Response(JSON.stringify({
-        error: 'Permission denied',
-      }), {status: 403});
+      throw new HTTPError(403, 'Permission denied');
     } catch (e) {
-      return new Response(JSON.stringify({
-        error: e.message,
-      }), {status: 401});
+      throw new HTTPError(401, e.message);
     }
   };
 }
@@ -92,8 +73,18 @@ function addressParamsCheck(address, type) {
 export function createRouter(env) {
   const router = Router({
     before: [withParams],
-    catch: error,
-  })
+    catch: (e) => {
+      if (e instanceof HTTPError) {
+        return new Response(JSON.stringify({
+          error: e.message,
+        }), {status: e.status});
+      }
+      return new Response(JSON.stringify({
+        error: e.message,
+      }), {status: 500});
+    },
+    finally: [json], 
+  });
 
   const auth = createTmaAuthMiddleware(env);
   const {
@@ -116,7 +107,7 @@ export function createRouter(env) {
       url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
     });
     const commands = await setMyCommands(TELEGRAM_TOKEN);
-    return new Response(JSON.stringify({webhook, commands}));
+    return {webhook, commands};
   });
 
 
@@ -133,48 +124,36 @@ export function createRouter(env) {
 
   router.post('/api/address/add', auth, async (req) => {
     const {address, type} = await req.json();
-    try {
-      const key = addressParamsCheck(address, type);
-      await addAddress(DB, address, key);
-      return new Response('{}');
-    } catch (e) {
-      return new Response(JSON.stringify({
-        error: e.message,
-      }), {status: statusCodeFromError(e)});
-    }
+    const key = addressParamsCheck(address, type);
+    await addAddress(DB, address, key);
+    return {success: true};
   });
 
   router.post('/api/address/remove', auth, async (req) => {
     const {address, type} = await req.json();
-    try {
-      const key = addressParamsCheck(address, type);
-      await removeAddress(DB, address, key);
-      return new Response('{}');
-    } catch (e) {
-      return new Response(JSON.stringify({
-        error: e.message,
-      }), {status: statusCodeFromError(e)});
-    }
+    const key = addressParamsCheck(address, type);
+    await removeAddress(DB, address, key);
+    return {success: true};
   });
 
   router.get('/api/address/list', auth, async () => {
     const block = await loadArrayFromDB(DB, BLOCK_LIST_KEY);
     const white = await loadArrayFromDB(DB, WHITE_LIST_KEY);
-    return new Response(JSON.stringify({block, white}));
+    return {block, white};
   });
 
   /// Webhook
 
   router.post('/telegram/:token/webhook', async (req) => {
     if (req.params.token !== TELEGRAM_TOKEN) {
-      return new Response('Invalid token');
+      throw new HTTPError(403, 'Invalid token');
     }
     try {
       await telegramWebhookHandler(req, env);
     } catch (e) {
       console.error(e);
     }
-    return new Response('OK');
+    return {success: true};
   });
 
   /// Preview
@@ -198,7 +177,7 @@ export function createRouter(env) {
   });
 
   router.all('*', async () => {
-    return new Response('It works!');
+    throw new HTTPError(404, 'Not found');
   });
 
   return router;

@@ -20,7 +20,7 @@ async function fetchHandler(request, env, ctx) {
     return new Response(JSON.stringify({
       error: e.message,
     }), {status: 500});
-  })
+  });
 }
 
 /**
