@@ -58,25 +58,25 @@ Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, chec
 
 Location: Workers & Pages - your_work_name - Settings - Variables
 
-| KEY                    | Description                                                  |
-| :--------------------- | :----------------------------------------------------------- |
-| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. Multiple IDs separated by English commas |
-| TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0` |
-| DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev` |
-| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,` |
-| WHITE_LIST             | Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]` |
-| BLOCK_LIST             | Sender blacklist, an array of regular expressions or email address converted to a string |
-| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable. Please make sure to back them up. |
-| OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear. |
-| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions` |
-| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-4o-mini`         |
-| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english` |
-| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`. |
-| MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024. |
+| KEY                    | Description                                                                                                                                                                                                                                                                                                                                                                                            |
+|:-----------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TELEGRAM_ID            | The Chat ID of the destination to sent by the Bot (such as your own Telegram account ID), can be obtained through the bot's `/id` command, which is generally a series of numbers, GROUP's start with -100. Multiple IDs separated by English commas                                                                                                                                                   |
+| TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                                                                                                                                                                                                           |
+| DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev`                                                                                                                                                                                                                                                                                                                                        |
+| FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                                                                                                                                                                                                                                                                   |
+| ~~WHITE_LIST~~         | (**To be deprecated soon, switch to using built-in mini programs for editing.**)Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]`                                                                                                                                                                                             |
+| ~~BLOCK_LIST~~         | (**To be deprecated soon, switch to using built-in mini programs for editing.**)Sender blacklist, an array of regular expressions or email address converted to a string                                                                                                                                                                                                                               |
+| MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable, please back up.                                                                                                                                                                                                                                                                     |
+| OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear.                                                                                                                                                                                                                                                                                           |
+| OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                                                                                                                                                                                                                                                                        |
+| OPENAI_CHAT_MODEL      | Customizable model, default value is `gpt-4o-mini`                                                                                                                                                                                                                                                                                                                                                     |
+| SUMMARY_TARGET_LANG    | The language for customizing the summary, with a default value of `english`                                                                                                                                                                                                                                                                                                                            |
+| GUARDIAN_MODE          | Guard mode, default off, if you want to enable it, fill in `true`.                                                                                                                                                                                                                                                                                                                                     |
+| MAX_EMAIL_SIZE         | Maximum email size in bytes, emails exceeding this size will be processed according to `MAX_EMAIL_SIZE_POLICY`. The main purpose is to prevent the worker function from timing out due to too large attachments. Default is 512*1024.                                                                                                                                                                  |
 | MAX_EMAIL_SIZE_POLICY  | The available values are `unhandled`, `truncate` and `continute`. `unhandled` means return the headers without parsing the message body, `truncate` means truncate the message body and only parse the allowed size, `continute` means continue to process the message regardless of the size limit. The default is `truncate`. This policy only affects Telegram push messages, not email forwarding. |
-| DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV. |
+| DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV.                                                                                                                                                                                                                                              |
 
-> `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`.
+> `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`. The list in the environment variables is about to be deprecated and will be edited using the built-in app.
 
 > The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
 
@@ -87,13 +87,12 @@ The command-based management of black and white lists in the old version has bee
 
 > To use the telegram-mini-program, you need to re-call the `/init` interface to bind the commands.
 
-| block list | white list | list test |
-| :--- | :--- |:--- |
-| ![image](./doc/tma_block_list.png) | ![image](./doc/tma_white_list.png) | ![image](./doc/tma_test_address.png)|
+| block list                         | white list                         | list test                            |
+|:-----------------------------------|:-----------------------------------|:-------------------------------------|
+| ![image](./doc/tma_block_list.png) | ![image](./doc/tma_white_list.png) | ![image](./doc/tma_test_address.png) |
 
 
 ## Usage
-
 
 The default message structure is as follows.
 ```
@@ -106,22 +105,29 @@ To: [recipient]
 (Preview)(Summary)(Text)(HTML)
 
 ```
+### Email Preview
+When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and four buttons are displayed.
 
-When the email forwarding notification is sent to Telegram, only the title, sender, recipient, and four buttons are included.
+1. `Preview` mode: You can preview the plain text mode of the email directly in the bot, but there is a limit of 4096 characters.
+2. `Summary` mode: When you have configured `OPENAI_API_KEY`, the `Summary` button will appear, allowing you to summarize the content of the email.
+3. `TEXT` mode: Use the web page to view plain text emails, and read emails longer than 4096 characters.
+4. `HTML` mode: You can view rich text emails, but they may contain certain scripts or other tracking links. It is recommended to use rich text mode only when necessary or when the source is confirmed to be safe.
 
-Using `Preview` allows you to directly preview the plain text mode of the email in the bot. However, there is a limit of 4096 characters. If it exceeds 4096 characters, you can use `TEXT` or `HTML` to view the complete email. Below the preview message, there is a `Back` button that can be clicked to close the preview.
 
-When you configure `OPENAI_API_KEY`, a `Summary` button will appear so that you can summarize the content of the email. Below the summary message, there is a `Back` button that can be clicked to close the summary.
+### Security and Email Cache
+1. `MAIL_TTL`: For security reasons, when the email cache retention time exceeds `MAIL_TTL`, the link that the button jumps to cannot be opened. You can modify the environment variables to adjust the expiration time.
+2. Due to Workers restrictions, emails (especially with large attachments) may cause function timeouts and multiple retries, which may result in receiving duplicate notifications. It is recommended to add a backup email to the FORWARD_LIST to prevent email loss.
+3. Enabling `GUARDIAN_MODE` can reduce duplicate message interference, improve worker success rate, but will consume more KV write times. It is recommended to enable it when necessary.
 
-Using `TEXT`, you can see plain text emails; using `HTML`, you can see rich-text emails. However, they may contain certain scripts or other tracking links. It is recommended to use rich-text mode only when necessary or when confirming that there are no issues with its source.
+### Blacklist and Whitelist
+Regarding the matching rules for blacklists and whitelists, taking the whitelist as an example, first, the `WHITE_LIST` will be read from the environment variable and converted into an array. Then, the `WHITE_LIST` will be read from KV and converted into an array. Finally, the two arrays will be merged to obtain the complete whitelist rules. When matching, it will first determine whether the elements in the array are equal to the string to be matched. If they are equal, the match is successful. If they are not equal, the elements in the array will be converted into regular expressions and then matched. If the match is successful, it will return success. If all elements fail to match, it will return failure.
 
-For security reasons, when exceeding the mail cache retention time (`MAIL_TTL`), links opened by buttons cannot be accessed. You can modify environment variables yourself to adjust expiration time.
+To generate a regular JSON array string for the whitelist/blacklist, you can use this small tool, which also includes several demos. [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
-This Bot does not support attachments. If you need attachment support, you can combine it with my another project [testmail-viewer](https://github.com/TBXark/testmail-viewer) and forward emails to your testmail using `FORWARD_LIST`. This way, you can download your attachments using [testmail-viewer](https://github.com/TBXark/testmail-viewer).
+It is recommended to use a small program to manage the blacklist and whitelist, which can be more convenient to add and delete. The existing blacklist and whitelist in the environment variables will soon be deprecated.
 
-Due to the limitation of Workers, if the email size (especially the attachment size) is too large, it will cause function timeout. At this time, Workers will retry multiple times, which may result in receiving multiple notifications and backup emails. Moreover, there is a limit on the number of retries. Once exceeded, no further retries will be made. This may lead to your email being lost. Therefore, it is recommended that you fill in your backup email in `FORWARD_LIST`, so that even if your email is lost, you can find it in your backup mailbox. If you frequently encounter this problem, you can try enabling Guardian Mode (`GUARDIAN_MODE`), which will record the operations already performed and not execute them again during the next retry. This reduces interference from duplicate messages and increases the success rate of workers. However, this operation consumes more KV write operations, so it is recommended to enable it when necessary.
-
-Regarding the matching rules for black and white lists, taking the white list as an example, first, the `WHITE_LIST` will be read from the environment variable and converted into an array. Then, `WHITE_LIST` will be read from KV and converted into an array. The two arrays will then be merged to obtain a complete set of white list rules. When matching, it will first determine whether the elements in the array are equal to the string to be matched. If they are equal, it is considered a successful match; if not equal, the elements in the array will be converted into regular expressions for further matching. If there is a successful match with any element in either form (string or regex), it returns success. If all elements fail to match, it returns failure.
+### Email Attachments
+This bot does not support attachments. If you need attachment support, you can use my other project [testmail-viewer](https://github.com/TBXark/testmail-viewer) to forward the email to your testmail using `FORWARD_LIST`, so that you can download your attachments using [testmail-viewer](https://github.com/TBXark/testmail-viewer).
 
 ## License
 

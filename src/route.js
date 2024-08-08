@@ -87,7 +87,7 @@ function addressParamsCheck(address, type) {
  *
  * Create the router.
  * @param {Environment} env - The environment object.
- * @returns {import('itty-router').RouteHandler} The router object.
+ * @returns {import('itty-router').Router} The router object.
  */
 export function createRouter(env) {
   const router = Router();
@@ -159,7 +159,7 @@ export function createRouter(env) {
     return new Response(JSON.stringify({block, white}));
   });
 
-  /// Wenbooh
+  /// Webhook
 
   router.post('/telegram/:token/webhook', async (req) => {
     if (req.params.token !== TELEGRAM_TOKEN) {
