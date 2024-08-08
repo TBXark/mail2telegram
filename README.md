@@ -85,7 +85,7 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 
 The command-based management of black and white lists in the old version has been deprecated. Now, the management of black and white lists is done through a mini-program. 
 
-> To use the telegram-mini-program, you need to re-call the `/init` interface to bind the commands.
+> To use the telegram-mini-program, you need to re-call the `/init` api to bind the commands.
 
 | block list                         | white list                         | list test                            |
 |:-----------------------------------|:-----------------------------------|:-------------------------------------|

@@ -87,7 +87,7 @@ function addressParamsCheck(address, type) {
  *
  * Create the router.
  * @param {Environment} env - The environment object.
- * @returns {import('itty-router').Router} The router object.
+ * @returns {import('itty-router').RouterType} The router object.
  */
 export function createRouter(env) {
   const router = Router();
