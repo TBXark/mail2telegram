@@ -88,7 +88,7 @@
 
 /**
  * @typedef {object} TelegramSendMessageRequest
- * @property {number} chat_id - The chat ID.
+ * @property {string|number} chat_id - The chat ID.
  * @property {string} text - The text content of the message.
  * @property {boolean} disable_web_page_preview - Whether to disable the web page preview.
  * @property {object} reply_markup - The reply markup.

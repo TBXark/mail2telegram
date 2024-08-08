@@ -58,19 +58,20 @@ export async function sendMailToTelegram(message, env) {
 }
 
 /**
- * @typedef {function(TelegramMessage): Promise<Response> } TelegramMessageHandler
- * @typedef {function(TelegramMessage): Promise<void>} CommandHandlerMiddleware
- * @typedef {function(TelegramMessage): Promise<void>} CommandHandler
- * @typedef {object} CommandHandlerGroup
- * @property {Array<CommandHandlerMiddleware>} middlewares - The middlewares for the command.
- * @property {Map<string, CommandHandler>} handlers - The handlers for the command.
+ * @typedef {Function} TelegramMessageHandler
+ * @param {TelegramMessage} message - The Telegram message object.
+ * @returns {Promise<Response>} The fetch response.
+ */
+
+/**
+ * @typedef {Map<string, TelegramMessageHandler>} CommandHandlerGroup
  */
 
 /**
  * Handles the incoming Telegram command
  * @param {TelegramMessage} message - The Telegram message object.
  * @param {object} env - The environment object.
- * @returns {Promise<void>} The fetch response.
+ * @returns {Promise<Response>|null} The fetch response.
  */
 async function telegramCommandHandler(message, env) {
   let [command] = message.text.split(/ (.*)/);
@@ -80,19 +81,18 @@ async function telegramCommandHandler(message, env) {
   }
   command = command.substring(1);
   /**
-   * @type {Array<CommandHandlerGroup>}
+   * @type {CommandHandlerGroup}
    */
   const handlers = {
     id: handleIDCommand(env),
     start: handleIDCommand(env),
-    test: handleOpenTMACommand(env, 'test'),
-    white: handleOpenTMACommand(env, 'white'),
-    block: handleOpenTMACommand(env, 'block'),
+    test: handleOpenTMACommand(env, 'test', null),
+    white: handleOpenTMACommand(env, 'white', null),
+    block: handleOpenTMACommand(env, 'block', null),
   };
 
   if (handlers[command]) {
-    await handlers[command](message);
-    return;
+    return await handlers[command](message);
   }
   // 兼容旧版命令返回默认信息
   return handleOpenTMACommand(env, '', `Unknown command: ${command}, try to reinitialize the bot.`)(message);
@@ -115,7 +115,7 @@ function handleIDCommand(env) {
  * Opens the TMA for the user.
  * @param {object} env - The environment object containing the Telegram token.
  * @param {string} mode - TMA mode.
- * @param {string} text - The text to be displayed.
+ * @param {?string} text - The text to be displayed.
  * @returns {TelegramMessageHandler} - An async function that takes a message object and sends the TMA link to the user.
  */
 function handleOpenTMACommand(env, mode, text) {
@@ -173,7 +173,7 @@ async function telegramCallbackHandler(callback, env) {
   };
 
   const renderHandlerBuilder = (render) => async (arg) => {
-    const value = await loadMailCache(arg, DB);
+    const value = await loadMailCache(DB, arg);
     if (!value) {
       throw new Error('Error: Email not found or expired.');
     }

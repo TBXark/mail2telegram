@@ -2,22 +2,6 @@ import PostalMime from 'postal-mime';
 import {convert} from 'html-to-text';
 import './types.js';
 
-
-/**
- * Generates a random ID of the specified length.
- * @param {number} length - The length of the random ID to generate.
- * @returns {string} - The randomly generated ID.
- */
-function randomId(length) {
-  const elements =
-    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += elements[Math.floor(Math.random() * elements.length)];
-  }
-  return result;
-}
-
 /**
  * Converts a ReadableStream to an ArrayBuffer.
  * @param {ReadableStream} stream - The ReadableStream to convert.
@@ -53,7 +37,7 @@ async function streamToArrayBuffer(stream, streamSize) {
  * @returns {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
  */
 export async function parseEmail(message, maxSize, maxSizePolicy) {
-  const id = randomId(32);
+  const id = crypto.randomUUID();
   const cache = {
     id: id,
     messageId: message.headers.get('Message-ID'),

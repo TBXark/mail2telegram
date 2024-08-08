@@ -18,10 +18,10 @@ class HTTPError extends Error {
  * @returns {number} The status code.
  */
 function statusCodeFromError(e) {
-    if (e instanceof HTTPError) {
-        return e.status;
-    }
-    return 500;
+  if (e instanceof HTTPError) {
+    return e.status;
+  }
+  return 500;
 }
 
 /**
@@ -30,37 +30,37 @@ function statusCodeFromError(e) {
  * @returns {import('itty-router').MiddlewareType}
  */
 function createTmaAuthMiddleware(env) {
-    const {
-        TELEGRAM_TOKEN,
-        TELEGRAM_ID,
-      } = env;
-   return async (req) => {
-        const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
-        if (authType !== 'tma') {
-          return new Response(JSON.stringify({
-            error: 'Invalid authorization type',
-          }), {status: 401});
+  const {
+    TELEGRAM_TOKEN,
+    TELEGRAM_ID,
+  } = env;
+  return async (req) => {
+    const [authType, authData = ''] = (req.headers.get('Authorization') || '').split(' ');
+    if (authType !== 'tma') {
+      return new Response(JSON.stringify({
+        error: 'Invalid authorization type',
+      }), {status: 401});
+    }
+    try {
+      await validate(authData, TELEGRAM_TOKEN, {
+        expiresIn: 3600,
+      });
+      const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] == 'user')[0][1];
+      const user = JSON.parse(decodeURIComponent(userRaw));
+      for (const id of TELEGRAM_ID.split(',')) {
+        if (id === `${user.id}`) {
+          return;
         }
-        try {
-          await validate(authData, TELEGRAM_TOKEN, {
-            expiresIn: 3600,
-          });
-          const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] == 'user')[0][1];
-          const user = JSON.parse(decodeURIComponent(userRaw));
-          for (const id of TELEGRAM_ID.split(',')) {
-            if (id === `${user.id}`) {
-              return;
-            }
-          }
-          return new Response(JSON.stringify({
-            error: 'Permission denied',
-          }), {status: 403});
-        } catch (e) {
-          return new Response(JSON.stringify({
-            error: e.message,
-          }), {status: 401});
-        }
-      };
+      }
+      return new Response(JSON.stringify({
+        error: 'Permission denied',
+      }), {status: 403});
+    } catch (e) {
+      return new Response(JSON.stringify({
+        error: e.message,
+      }), {status: 401});
+    }
+  };
 }
 
 /**
@@ -70,21 +70,21 @@ function createTmaAuthMiddleware(env) {
  * @returns {string}
  */
 function addressParamsCheck(address, type) {
-    const keyMap = {
-        block: BLOCK_LIST_KEY,
-        white: WHITE_LIST_KEY,
-    };
-    if (!address || !type) {
-      throw new HTTPError(400, 'Missing address or type');
-    }
-    if (keyMap[type] === undefined) {
-        throw new HTTPError(400, 'Invalid type');
-    }
-    return keyMap[type];
+  const keyMap = {
+    block: BLOCK_LIST_KEY,
+    white: WHITE_LIST_KEY,
   };
+  if (!address || !type) {
+    throw new HTTPError(400, 'Missing address or type');
+  }
+  if (keyMap[type] === undefined) {
+    throw new HTTPError(400, 'Invalid type');
+  }
+  return keyMap[type];
+}
 
 /**
- * 
+ *
  * Create the router.
  * @param {Environment} env - The environment object.
  * @returns {import('itty-router').RouteHandler} The router object.
@@ -100,12 +100,12 @@ export function createRouter(env) {
 
   router.get('/', async () => {
     return new Response(null, {
-        status: 302,
-        headers: {
-            'location': 'https://github.com/TBXark/mail2telegram',
-        },
-        });
-   });
+      status: 302,
+      headers: {
+        'location': 'https://github.com/TBXark/mail2telegram',
+      },
+    });
+  });
 
   router.get('/init', async () => {
     const webhook = await sendTelegramRequest(TELEGRAM_TOKEN, 'setWebhook', {
@@ -130,26 +130,26 @@ export function createRouter(env) {
   router.post('/api/address/add', auth, async (req) => {
     const {address, type} = await req.json();
     try {
-        const key = addressParamsCheck(address, type);
-        await addAddress(DB, address, key);
-        return new Response('{}');
+      const key = addressParamsCheck(address, type);
+      await addAddress(DB, address, key);
+      return new Response('{}');
     } catch (e) {
-        return new Response(JSON.stringify({
-          error: e.message,
-        }), {status: statusCodeFromError(e)});
+      return new Response(JSON.stringify({
+        error: e.message,
+      }), {status: statusCodeFromError(e)});
     }
   });
 
   router.post('/api/address/remove', auth, async (req) => {
     const {address, type} = await req.json();
     try {
-        const key = addressParamsCheck(address, type);
-        await removeAddress(DB, address, key);
-        return new Response('{}');
+      const key = addressParamsCheck(address, type);
+      await removeAddress(DB, address, key);
+      return new Response('{}');
     } catch (e) {
-        return new Response(JSON.stringify({
-            error: e.message,
-          }), {status: statusCodeFromError(e)});
+      return new Response(JSON.stringify({
+        error: e.message,
+      }), {status: statusCodeFromError(e)});
     }
   });
 
@@ -178,7 +178,7 @@ export function createRouter(env) {
   router.get('/email/:id', async (req) => {
     const id = req.params.id;
     const mode = req.query.mode || 'text';
-    const value = await loadMailCache(id, DB);
+    const value = await loadMailCache(DB, id);
     const headers = {};
     switch (mode) {
       case 'html':

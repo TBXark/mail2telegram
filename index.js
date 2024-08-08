@@ -1,8 +1,9 @@
 import './src/polyfill.js';
 import './src/types.js';
 import {sendMailToTelegram} from './src/telegram.js';
-import {isMessageBlock, loadMailStatus} from './src/dao.js';
+import {loadMailStatus} from './src/dao.js';
 import { createRouter} from './src/route.js';
+import {isMessageBlock} from './src/helper.js';
 
 
 /**
@@ -14,7 +15,7 @@ import { createRouter} from './src/route.js';
  */
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
-  const router = createRouter(env);  
+  const router = createRouter(env);
   return router.handle(request).catch((e) => {
     console.error(e);
     return new Response(e.message, {
@@ -43,7 +44,7 @@ async function emailHandler(message, env, ctx) {
   const isGuardian = GUARDIAN_MODE === 'true';
   const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
   const statusTTL = {expirationTtl: 60 * 60};
-  const status = await loadMailStatus(id, isGuardian, DB);
+  const status = await loadMailStatus(DB, id, isGuardian);
 
   // Reject the email
   if (isBlock && blockPolicy.includes('reject')) {

@@ -1,5 +1,6 @@
 import './types.js';
-import {checkAddressStatus} from './dao.js';
+
+import {checkAddressStatus} from './helper.js';
 
 /**
  * Sends a request to the OpenAI API and returns the first choice.
@@ -21,7 +22,7 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant.',
+          content: 'You are a professional email summarization assistant.',
         },
         {
           role: 'user',
