@@ -16,12 +16,11 @@ import {isMessageBlock} from './src/helper.js';
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
   const router = createRouter(env);
-  return router.handle(request).catch((e) => {
-    console.error(e);
-    return new Response(e.message, {
-      status: 500,
-    });
-  });
+  return router.fetch(request).catch((e) => {
+    return new Response(JSON.stringify({
+      error: e.message,
+    }), {status: 500});
+  })
 }
 
 /**

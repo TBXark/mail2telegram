@@ -1,5 +1,5 @@
 import './types.js';
-import {Router} from 'itty-router';
+import { Router, error, withParams } from 'itty-router'
 import tmaHTML from './tma.html';
 import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
 import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
@@ -90,7 +90,11 @@ function addressParamsCheck(address, type) {
  * @returns {import('itty-router').RouterType} The router object.
  */
 export function createRouter(env) {
-  const router = Router();
+  const router = Router({
+    before: [withParams],
+    catch: error,
+  })
+
   const auth = createTmaAuthMiddleware(env);
   const {
     TELEGRAM_TOKEN,
