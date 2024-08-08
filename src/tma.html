@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>mail2telegram</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@telegram-apps/sdk@1.1.3/dist/index.iife.js"></script>
     <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
     <style>
         body {
@@ -265,8 +265,7 @@
 
       onMounted(async () => {
         try {
-          const {initDataRaw} = window.telegramApps.sdk.retrieveLaunchParams();
-          client.tma = initDataRaw;
+          client.tma = window.Telegram.WebApp.initData;
           const {block, white} = await client.loadAddress();
           blockList.value = block;
           whiteList.value = white;
