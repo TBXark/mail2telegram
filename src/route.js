@@ -1,5 +1,5 @@
 import './types.js';
-import { Router, json, withParams } from 'itty-router';
+import { Router, json } from 'itty-router';
 import tmaHTML from './tma.html';
 import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
 import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
@@ -72,7 +72,6 @@ function addressParamsCheck(address, type) {
  */
 export function createRouter(env) {
   const router = Router({
-    before: [withParams],
     catch: (e) => {
       if (e instanceof HTTPError) {
         return new Response(JSON.stringify({

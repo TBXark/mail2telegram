@@ -10,22 +10,21 @@ import './types.js';
  */
 async function streamToArrayBuffer(stream, streamSize) {
   const result = new Uint8Array(streamSize);
-  let bytesRead = 0;
   const reader = stream.getReader();
-
-
-  while (true) {
-    if (bytesRead >= streamSize) {
-      break;
+  let bytesRead = 0;
+  try {
+    while (bytesRead < streamSize) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      result.set(value, bytesRead);
+      bytesRead += value.length;
     }
-    const {done, value} = await reader.read();
-    if (done) {
-      break;
-    }
-    result.set(value, bytesRead);
-    bytesRead += value.length;
+  } finally {
+    reader.releaseLock();
   }
-  return result;
+  return result.slice(0, bytesRead);
 }
 
 
