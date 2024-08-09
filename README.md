@@ -11,6 +11,8 @@ mail2telegram
 </p>
 
 
+![](./doc/social-preview.png)
+
 This is a Telegram Bot based on Cloudflare Email Routing Worker, which can convert emails into Telegram messages. You can forward emails from recipients with any prefix to the Bot, and then a temporary mailbox Bot with an infinite address will be created.
 
 <details>
@@ -26,29 +28,30 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 #### 1.1 Deploy via Command Line
 
-- Clone the repository:
+1. Clone the repository:
 
     `git clone git@github.com:TBXark/mail2telegram.git`
-- Copy the configuration template and modify it with your own Telegram configuration: 
+2. Copy the configuration template and modify it with your own Telegram configuration: 
 
     `cp wrangler.example.toml wrangler.toml`
-- Deploy 
+3. Deploy 
 
     `yarn & yarn pub`
 
 #### 1.2 Deploy via Copy and Paste
 
-- If you don't want to deploy using the command line and prefer to copy and paste, you can use the precompiled version > [`index.js`](./build/index.js)
-- When deploying via copy and paste, you need to manually set environment variables in the project's configuration page.
-- Bind `KV Namespace Bindings` database to worker with the name `DB`
-- To generate a whitelist/blacklist of regular expressions as a JSON array string, you can use this small tool which also includes some demos: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
+1. If you don't want to deploy using the command line and prefer to copy and paste, you can use the precompiled version > [`index.js`](./build/index.js)
+2. When deploying via copy and paste, you need to manually set environment variables in the project's configuration page.
+3. Bind `KV Namespace Bindings` database to worker with the name `DB`
+4. To generate a whitelist/blacklist of regular expressions as a JSON array string, you can use this small tool which also includes some demos: [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 
 ### 2. Configure Cloudflare Email Routing
 
-- Follow the official tutorial to configure [Cloudflare Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
-- Configure routing by changing the action of `Catch-all address` in `Email Routing - Routing Rules` to `Send to a Worker:mail2telegram`. Forward all remaining emails to this worker.
-- If you set `Catch-all address` as workers, you won't be able to forward all remaining emails to your own email. If you need to backup emails, simply fill in your backup email in the `FORWARD_LIST` environment variable of the worker.
+1. Follow the official tutorial to configure [Cloudflare Email Routing](https://blog.cloudflare.com/introducing-email-routing/).
+2. Configure routing by changing the action of `Catch-all address` in `Email Routing - Routing Rules` to `Send to a Worker:mail2telegram`. Forward all remaining emails to this worker.
+3. If you set `Catch-all address` as workers, you won't be able to forward all remaining emails to your own email. If you need to backup emails, simply fill in your backup email in the `FORWARD_LIST` environment variable of the worker.
+4. The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
 
 ### 3. Binding a Telegram Webhook
 
@@ -64,8 +67,8 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 | TELEGRAM_TOKEN         | Telegram Bot Token e.g., `7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                                                                                                                                                                                                                                                           |
 | DOMAIN                 | Workers domain name, e.g., `project_name.user_name.workers.dev`                                                                                                                                                                                                                                                                                                                                        |
 | FORWARD_LIST           | Backup emails, can be forwarded to your own email for backup, leave blank if not forwarding, multiple values can be separated by `,`                                                                                                                                                                                                                                                                   |
-| ~~WHITE_LIST~~         | (**To be deprecated soon, switch to using built-in mini programs for editing.**)Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]`                                                                                                                                                                                             |
-| ~~BLOCK_LIST~~         | (**To be deprecated soon, switch to using built-in mini programs for editing.**)Sender blacklist, an array of regular expressions or email address converted to a string                                                                                                                                                                                                                               |
+| ~~WHITE_LIST~~         | **To be deprecated soon, switch to using built-in mini programs for editing.**，Sender whitelist, an array of regular expressions or email address converted to a string, example: `[\".*@10086\\\\.cn\"]`                                                                                                                                                                                             |
+| ~~BLOCK_LIST~~         | **To be deprecated soon, switch to using built-in mini programs for editing.**，Sender blacklist, an array of regular expressions or email address converted to a string                                                                                                                                                                                                                               |
 | MAIL_TTL               | Email cache retention time in seconds, default is one day. After expiration, emails will no longer be previewable, please back up.                                                                                                                                                                                                                                                                     |
 | OPENAI_API_KEY         | OpenAI API Key, Used for summarizing email content. If not filled out, the "Summary" button will not appear.                                                                                                                                                                                                                                                                                           |
 | OPENAI_COMPLETIONS_API | Customizable API, default value is `https://api.openai.com/v1/chat/completions`                                                                                                                                                                                                                                                                                                                        |
@@ -76,14 +79,10 @@ Location: Workers & Pages - your_work_name - Settings - Variables
 | MAX_EMAIL_SIZE_POLICY  | The available values are `unhandled`, `truncate` and `continute`. `unhandled` means return the headers without parsing the message body, `truncate` means truncate the message body and only parse the allowed size, `continute` means continue to process the message regardless of the size limit. The default is `truncate`. This policy only affects Telegram push messages, not email forwarding. |
 | DB                     | Bind the database to the worker at the `KV Namespace Bindings` section. The `Variable Name` must be `DB`, and `KV Namespace` select any newly created KV.                                                                                                                                                                                                                                              |
 
-> `WHITE_LIST` and `BLOCK_LIST` take effect on both recipients and senders at the same time, with `WHITE_LIST` having a higher priority than `BLOCK_LIST`. The list in the environment variables is about to be deprecated and will be edited using the built-in app.
-
-> The email address in `FORWARD_LIST` should be added to `Cloudflare Dashboard - Email Routing - Destination addresses` after authentication in order to receive emails.
-
 
 ## Telegram Mini Apps
 
-The command-based management of black and white lists in the old version has been deprecated. Now, the management of black and white lists is done through a mini-program. 
+The command-based management of black and white lists in the old version has been deprecated. Now, the management of black and white lists is done through a mini-program. The black and white lists in the environment variables cannot be displayed or modified in the mini program.
 
 > To use the telegram-mini-program, you need to re-call the `/init` api to bind the commands.
 

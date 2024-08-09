@@ -10,6 +10,7 @@ mail2telegram
     <em>使用Telegram机器人获取您的临时电子邮件..</em>
 </p>
 
+![](./social-preview.png)
 
 这是一个基于 Cloudflare Email Routing Worker的 Telegram Bot，能够将邮件转换成telegram消息。你可以将任意前缀的收件人的邮件转发到Bot，然后一个无限地址的临时邮箱Bot就诞生了。
 
@@ -26,21 +27,21 @@ mail2telegram
 
 #### 1.1 使用命令行部署
 
-- 克隆项目
+1. 克隆项目
 
     `git clone git@github.com:TBXark/mail2telegram.git`
-- 复制配置模板，修改成自己的telegram配置 
+2. 复制配置模板，修改成自己的telegram配置 
 
     `cp wrangler.example.toml wrangler.toml` 
-- 部署 
+3. 部署 
 
     `yarn & yarn pub`
 
 #### 1.2 使用复制粘贴部署
 
-- 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](../build/index.js)
-- 使用复制粘贴部署需要手动在项目配置页面设置环境变量
-- 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`
+1. 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](../build/index.js)
+2. 使用复制粘贴部署需要手动在项目配置页面设置环境变量
+3. 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`
 
 
 ### 2. 配置Cloudflare Email Routing
@@ -48,6 +49,8 @@ mail2telegram
 1. 按照官方教程配置[Cloudflare Email Routing](https://blog.cloudflare.com/zh-cn/introducing-email-routing-zh-cn/)
 2. 配置路由 在`Email Routing - Routing Rules` 中 `Catch-all address` 的 action 改成 `Send to a Worker:mail2telegram`。 把所有剩余的邮件都转发到我这个worker。
 3. 如果将`Catch-all address`设置成workers后就没有办法将剩余所有邮件转发到你自己的邮件，如果你需要备份邮件，你只需要在worker环境变量中的`FORWARD_LIST`填入你的备份邮箱即可。
+4. `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
+
 
 ### 3. 绑定Telegram Webhook
 
@@ -64,8 +67,8 @@ mail2telegram
 | TELEGRAM_TOKEN         | Telegram Bot Token 例如：`7123456780:AAjkLAbvSgDdfsDdfsaSK0`                                                                                                             |
 | DOMAIN                 | Workers的域名, 例如: `project_name.user_name.workers.dev`                                                                                                                  |
 | FORWARD_LIST           | 备份邮件，可以转发到自己的邮箱备份, 留空则不转发，可以填入多个使用`,`分隔                                                                                                                               |
-| ~~WHITE_LIST~~         | (**即将废弃,改用内置小程序进行编辑**)发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                           |
-| ~~BLOCK_LIST~~         | (**即将废弃,改用内置小程序进行编辑**)发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串                                                                                                                     |
+| ~~WHITE_LIST~~         | **即将废弃,改用内置小程序进行编辑**，发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                           |
+| ~~BLOCK_LIST~~         | **即将废弃,改用内置小程序进行编辑**，发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串                                                                                                                     |
 | MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                                                                                                                                |
 | OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮                                                                                                                        |
 | OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions`                                                                                                             |
@@ -76,14 +79,9 @@ mail2telegram
 | MAX_EMAIL_SIZE_POLICY  | 可选值为`unhandled`,`truncate`,`continute`。 `unhandled`表示不处理只返回邮件头信息不解析邮件正文，`truncate`表示截断邮件正文只解析允许的大小，`continute`表示继续处理不管大小限制。默认为`truncate`。这个策略只影响Telegram推送消息，不影响邮件转发。 |
 | DB                     | 在下方的 `KV 命名空间绑定` 处将数据库绑定到worker, `变量名称`必须为`DB`，`KV 命名空间`选新建好的任意KV                                                                                                     |
 
-> `WHITE_LIST`和`BLOCK_LIST`同时对收件人和发件人生效，`WHITE_LIST`的优先级高于`BLOCK_LIST`。环境变量中的名单即将废弃，改用内置小程序进行编辑。
-
-> `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
-
-
 ## Telegram Mini Apps
 
-旧版使用命令方式管理黑白名单已废弃，现在使用小程序的方式管理黑白名单。
+旧版使用命令方式管理黑白名单已废弃，现在使用小程序的方式管理黑白名单。环境变量中的黑白名单无法在小程序中显示和修改。
 > 使用小程序需要重新调用 `/init` 接口绑定指令
 
 | 黑名单                            | 白名单                            | 名单测试                             |
