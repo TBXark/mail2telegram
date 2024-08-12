@@ -11,13 +11,13 @@ export const WHITE_LIST_KEY = 'WHITE_LIST';
  * @returns {Promise<string[]>}
  */
 export async function loadArrayFromDB(db, key) {
-  try {
-    const raw = await db.get(key);
-    return loadArrayFromRaw(raw);
-  } catch (e) {
-    console.error(e);
-  }
-  return [];
+    try {
+        const raw = await db.get(key);
+        return loadArrayFromRaw(raw);
+    } catch (e) {
+        console.error(e);
+    }
+    return [];
 }
 
 /**
@@ -28,9 +28,9 @@ export async function loadArrayFromDB(db, key) {
  * @returns {Promise<void>}
  */
 export async function addAddress(db, address, type) {
-  const list = await loadArrayFromDB(db, type);
-  list.unshift(address);
-  await db.put(type, JSON.stringify(list));
+    const list = await loadArrayFromDB(db, type);
+    list.unshift(address);
+    await db.put(type, JSON.stringify(list));
 }
 
 /**
@@ -41,9 +41,9 @@ export async function addAddress(db, address, type) {
  * @returns {Promise<void>}
  */
 export async function removeAddress(db, address, type) {
-  const list = await loadArrayFromDB(db, type);
-  const result = list.filter((item) => item !== address);
-  await db.put(type, JSON.stringify(result));
+    const list = await loadArrayFromDB(db, type);
+    const result = list.filter((item) => item !== address);
+    await db.put(type, JSON.stringify(result));
 }
 
 
@@ -55,21 +55,21 @@ export async function removeAddress(db, address, type) {
  * @returns {Promise<EmailHandleStatus>} The mail status.
  */
 export async function loadMailStatus(db, id, guardian) {
-  const defaultStatus = {
-    telegram: false,
-    forward: [],
-  };
-  if (guardian) {
-    try {
-      return {
-        ...defaultStatus,
-        ...JSON.parse(await db.get(id)),
-      };
-    } catch (e) {
-      console.error(e);
+    const defaultStatus = {
+        telegram: false,
+        forward: [],
+    };
+    if (guardian) {
+        try {
+            return {
+                ...defaultStatus,
+                ...JSON.parse(await db.get(id)),
+            };
+        } catch (e) {
+            console.error(e);
+        }
     }
-  }
-  return defaultStatus;
+    return defaultStatus;
 }
 
 /**
@@ -79,10 +79,10 @@ export async function loadMailStatus(db, id, guardian) {
  * @returns {Promise<EmailCache|null>}
  */
 export async function loadMailCache(db, id) {
-  try {
-    return JSON.parse(await db.get(id));
-  } catch (e) {
-    console.error(e);
-  }
-  return null;
+    try {
+        return JSON.parse(await db.get(id));
+    } catch (e) {
+        console.error(e);
+    }
+    return null;
 }

@@ -8,15 +8,15 @@ import {BLOCK_LIST_KEY, loadArrayFromDB, WHITE_LIST_KEY} from './dao.js';
  * @returns {boolean}
  */
 function testAddress(address, pattern) {
-  if (pattern.toLowerCase() === address.toLowerCase()) {
-    return true;
-  }
-  try {
-    const regex = new RegExp(pattern, 'i');
-    return !!regex.test(address);
-  } catch {
-    return false;
-  }
+    if (pattern.toLowerCase() === address.toLowerCase()) {
+        return true;
+    }
+    try {
+        const regex = new RegExp(pattern, 'i');
+        return !!regex.test(address);
+    } catch {
+        return false;
+    }
 }
 
 /**
@@ -26,46 +26,46 @@ function testAddress(address, pattern) {
  * @returns {object} - An object containing the status of the address.
  */
 export async function checkAddressStatus(addresses, env) {
-  const matchAddress = (list, address) => {
-    for (const item of list) {
-      if (!item) {
-        continue;
-      }
-      if (testAddress(address, item)) {
-        return true;
-      }
+    const matchAddress = (list, address) => {
+        for (const item of list) {
+            if (!item) {
+                continue;
+            }
+            if (testAddress(address, item)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const {
+        BLOCK_LIST,
+        WHITE_LIST,
+        DISABLE_LOAD_REGEX_FROM_DB,
+        DB,
+    } = env;
+    const blockList = loadArrayFromRaw(BLOCK_LIST);
+    const whiteList = loadArrayFromRaw(WHITE_LIST);
+    if (!(DISABLE_LOAD_REGEX_FROM_DB === 'true')) {
+        blockList.push(...(await loadArrayFromDB(DB, BLOCK_LIST_KEY)));
+        whiteList.push(...(await loadArrayFromDB(DB, WHITE_LIST_KEY)));
     }
-    return false;
-  };
-  const {
-    BLOCK_LIST,
-    WHITE_LIST,
-    DISABLE_LOAD_REGEX_FROM_DB,
-    DB,
-  } = env;
-  const blockList = loadArrayFromRaw(BLOCK_LIST);
-  const whiteList = loadArrayFromRaw(WHITE_LIST);
-  if (!(DISABLE_LOAD_REGEX_FROM_DB === 'true')) {
-    blockList.push(...(await loadArrayFromDB(DB, BLOCK_LIST_KEY)));
-    whiteList.push(...(await loadArrayFromDB(DB, WHITE_LIST_KEY)));
-  }
-  const result = {};
+    const result = {};
 
-  for (const addr of addresses) {
-    if (!addr) {
-      continue;
+    for (const addr of addresses) {
+        if (!addr) {
+            continue;
+        }
+        if (matchAddress(whiteList, addr)) {
+            result[addr] = 'white';
+            continue;
+        }
+        if (matchAddress(blockList, addr)) {
+            result[addr] = 'block';
+            continue;
+        }
+        result[addr] = 'no_match';
     }
-    if (matchAddress(whiteList, addr)) {
-      result[addr] = 'white';
-      continue;
-    }
-    if (matchAddress(blockList, addr)) {
-      result[addr] = 'block';
-      continue;
-    }
-    result[addr] = 'no_match';
-  }
-  return result;
+    return result;
 }
 
 /**
@@ -75,28 +75,28 @@ export async function checkAddressStatus(addresses, env) {
  * @returns {Promise<boolean>} A promise that resolves to true if the message can be handled.
  */
 export async function isMessageBlock(message, env) {
-  const addresses = [
-    message.from,
-    message.to,
-  ];
-  const res = await checkAddressStatus(addresses, env);
-  for (const key in res) {
-    switch (res[key]) {
-      case 'white':
-        console.log(`Matched white list: ${key}`);
-        return false;
-      default:
-        break;
+    const addresses = [
+        message.from,
+        message.to,
+    ];
+    const res = await checkAddressStatus(addresses, env);
+    for (const key in res) {
+        switch (res[key]) {
+        case 'white':
+            console.log(`Matched white list: ${key}`);
+            return false;
+        default:
+            break;
+        }
     }
-  }
-  for (const key in res) {
-    switch (res[key]) {
-      case 'block':
-        console.log(`Matched block list: ${key}`);
-        return true;
-      default:
-        break;
+    for (const key in res) {
+        switch (res[key]) {
+        case 'block':
+            console.log(`Matched block list: ${key}`);
+            return true;
+        default:
+            break;
+        }
     }
-  }
-  return false;
+    return false;
 }

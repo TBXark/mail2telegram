@@ -15,12 +15,12 @@ import {isMessageBlock} from './src/helper.js';
  */
 // eslint-disable-next-line no-unused-vars
 async function fetchHandler(request, env, ctx) {
-  const router = createRouter(env);
-  return router.fetch(request).catch((e) => {
-    return new Response(JSON.stringify({
-      error: e.message,
-    }), {status: 500});
-  });
+    const router = createRouter(env);
+    return router.fetch(request).catch((e) => {
+        return new Response(JSON.stringify({
+            error: e.message,
+        }), {status: 500});
+    });
 }
 
 /**
@@ -32,65 +32,65 @@ async function fetchHandler(request, env, ctx) {
  */
 // eslint-disable-next-line no-unused-vars
 async function emailHandler(message, env, ctx) {
-  const {
-    FORWARD_LIST,
-    BLOCK_POLICY,
-    GUARDIAN_MODE,
-    DB,
-  } = env;
-  const id = message.headers.get('Message-ID');
-  const isBlock = await isMessageBlock(message, env);
-  const isGuardian = GUARDIAN_MODE === 'true';
-  const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
-  const statusTTL = {expirationTtl: 60 * 60};
-  const status = await loadMailStatus(DB, id, isGuardian);
+    const {
+        FORWARD_LIST,
+        BLOCK_POLICY,
+        GUARDIAN_MODE,
+        DB,
+    } = env;
+    const id = message.headers.get('Message-ID');
+    const isBlock = await isMessageBlock(message, env);
+    const isGuardian = GUARDIAN_MODE === 'true';
+    const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
+    const statusTTL = {expirationTtl: 60 * 60};
+    const status = await loadMailStatus(DB, id, isGuardian);
 
-  // Reject the email
-  if (isBlock && blockPolicy.includes('reject')) {
-    message.setReject('Blocked');
-    return;
-  }
+    // Reject the email
+    if (isBlock && blockPolicy.includes('reject')) {
+        message.setReject('Blocked');
+        return;
+    }
 
-  // Forward to email
-  try {
-    const blockForward = isBlock && blockPolicy.includes('forward');
-    const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
-    for (const forward of forwardList) {
-      try {
-        const add = forward.trim();
-        if (status.forward.includes(add)) {
-          continue;
+    // Forward to email
+    try {
+        const blockForward = isBlock && blockPolicy.includes('forward');
+        const forwardList = blockForward ? [] : (FORWARD_LIST || '').split(',');
+        for (const forward of forwardList) {
+            try {
+                const add = forward.trim();
+                if (status.forward.includes(add)) {
+                    continue;
+                }
+                await message.forward(add);
+                if (isGuardian) {
+                    status.forward.push(add);
+                    await DB.put(id, JSON.stringify(status), statusTTL);
+                }
+            } catch (e) {
+                console.error(e);
+            }
         }
-        await message.forward(add);
-        if (isGuardian) {
-          status.forward.push(add);
-          await DB.put(id, JSON.stringify(status), statusTTL);
-        }
-      } catch (e) {
+    } catch (e) {
         console.error(e);
-      }
     }
-  } catch (e) {
-    console.error(e);
-  }
 
-  // Send to Telegram
-  try {
-    const blockTelegram = isBlock && blockPolicy.includes('telegram');
-    if (!status.telegram && !blockTelegram) {
-      await sendMailToTelegram(message, env);
+    // Send to Telegram
+    try {
+        const blockTelegram = isBlock && blockPolicy.includes('telegram');
+        if (!status.telegram && !blockTelegram) {
+            await sendMailToTelegram(message, env);
+        }
+        if (isGuardian) {
+            status.telegram = true;
+            await DB.put(id, JSON.stringify(status), statusTTL);
+        }
+    } catch (e) {
+        console.error(e);
     }
-    if (isGuardian) {
-      status.telegram = true;
-      await DB.put(id, JSON.stringify(status), statusTTL);
-    }
-  } catch (e) {
-    console.error(e);
-  }
 }
 
 
 export default {
-  fetch: fetchHandler,
-  email: emailHandler,
+    fetch: fetchHandler,
+    email: emailHandler,
 };
