@@ -1,5 +1,5 @@
 import './types.js';
-import { Router, json } from 'itty-router';
+import {json, Router} from 'itty-router';
 import tmaHTML from './tma.html';
 import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
 import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
@@ -82,7 +82,7 @@ export function createRouter(env) {
                 error: e.message,
             }), {status: 500});
         },
-        finally: [json], 
+        finally: [json],
     });
 
     const auth = createTmaAuthMiddleware(env);

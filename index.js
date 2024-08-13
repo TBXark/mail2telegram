@@ -2,7 +2,7 @@ import './src/polyfill.js';
 import './src/types.js';
 import {sendMailToTelegram} from './src/telegram.js';
 import {loadMailStatus} from './src/dao.js';
-import { createRouter} from './src/route.js';
+import {createRouter} from './src/route.js';
 import {isMessageBlock} from './src/helper.js';
 
 
