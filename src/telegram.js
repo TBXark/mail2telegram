@@ -1,7 +1,7 @@
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode } from './render.js';
-import { parseEmail } from './parse.js';
-import './types.js';
 import { loadMailCache } from './dao.js';
+
+import './types.js';
 
 const TmaModeDescription = {
     test: 'Test an email address',
@@ -31,25 +31,15 @@ export async function sendTelegramRequest(token, method, body) {
 
 /**
  * Sends an email message to Telegram.
- * @param {EmailMessage} message - The email message to be sent.
+ * @param {EmailCache} mail - The email message to be sent.
  * @param {Environment} env - The environment variables.
  * @returns {Promise<void>} A promise that resolves when the email message is sent successfully.
  */
-export async function sendMailToTelegram(message, env) {
+export async function sendMailToTelegram(mail, env) {
     const {
         TELEGRAM_TOKEN,
         TELEGRAM_ID,
-        MAIL_TTL,
-        DB,
-        MAX_EMAIL_SIZE,
-        MAX_EMAIL_SIZE_POLICY,
     } = env;
-
-    const ttl = Number.parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
-    const maxSize = Number.parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
-    const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
-    const mail = await parseEmail(message, maxSize, maxSizePolicy);
-    await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
     const req = await renderEmailListMode(mail, env);
     for (const id of TELEGRAM_ID.split(',')) {
         req.chat_id = id;

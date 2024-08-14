@@ -1,6 +1,6 @@
-import './types.js';
-
 import { checkAddressStatus } from './helper.js';
+
+import './types.js';
 
 /**
  * Sends a request to the OpenAI API and returns the first choice.

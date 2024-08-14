@@ -1,5 +1,6 @@
-import './types.js';
 import { loadArrayFromRaw } from './utils.js';
+
+import './types.js';
 
 export const BLOCK_LIST_KEY = 'BLOCK_LIST';
 export const WHITE_LIST_KEY = 'WHITE_LIST';

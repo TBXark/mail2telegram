@@ -1,9 +1,10 @@
-import './types.js';
 import { Router, json } from 'itty-router';
 import { validate } from '@telegram-apps/init-data-node/web';
 import tmaHTML from './tma.html';
 import { BLOCK_LIST_KEY, WHITE_LIST_KEY, addAddress, loadArrayFromDB, loadMailCache, removeAddress } from './dao.js';
 import { sendTelegramRequest, setMyCommands, telegramWebhookHandler } from './telegram.js';
+
+import './types.js';
 
 class HTTPError extends Error {
     constructor(status, message) {

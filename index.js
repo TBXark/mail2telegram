@@ -4,6 +4,7 @@ import { sendMailToTelegram } from './src/telegram.js';
 import { loadMailStatus } from './src/dao.js';
 import { createRouter } from './src/route.js';
 import { isMessageBlock } from './src/helper.js';
+import { parseEmail } from './src/parse.js';
 
 /**
  * Handles the fetch request.
@@ -36,7 +37,11 @@ async function emailHandler(message, env, ctx) {
         BLOCK_POLICY,
         GUARDIAN_MODE,
         DB,
+        MAIL_TTL,
+        MAX_EMAIL_SIZE,
+        MAX_EMAIL_SIZE_POLICY,
     } = env;
+    
     const id = message.headers.get('Message-ID');
     const isBlock = await isMessageBlock(message, env);
     const isGuardian = GUARDIAN_MODE === 'true';
@@ -77,7 +82,12 @@ async function emailHandler(message, env, ctx) {
     try {
         const blockTelegram = isBlock && blockPolicy.includes('telegram');
         if (!status.telegram && !blockTelegram) {
-            await sendMailToTelegram(message, env);
+            const ttl = Number.parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
+            const maxSize = Number.parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
+            const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
+            const mail = await parseEmail(message, maxSize, maxSizePolicy);
+            await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
+            await sendMailToTelegram(mail, env);
         }
         if (isGuardian) {
             status.telegram = true;
