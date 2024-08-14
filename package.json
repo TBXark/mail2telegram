@@ -24,11 +24,12 @@
     "postal-mime": "^2.0.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.1.1",
-    "eslint": "^9.1.1",
-    "eslint-plugin-jsdoc": "^50.0.0",
-    "globals": "^15.1.0",
-    "wrangler": "^3.0.0"
+    "@antfu/eslint-config": "^2.25.1",
+    "esbuild": "^0.23.0",
+    "eslint": "^9.8.0",
+    "eslint-plugin-format": "^0.1.2",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.69.1"
   },
   "files": [
     "index.js"

@@ -10,8 +10,7 @@ export function loadArrayFromRaw(raw) {
     let list = [];
     try {
         list = JSON.parse(raw);
-    // eslint-disable-next-line no-unused-vars
-    } catch (e) {
+    } catch {
         return [];
     }
     if (!Array.isArray(list)) {

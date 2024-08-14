@@ -1,9 +1,9 @@
 import './types.js';
-import {json, Router} from 'itty-router';
+import { Router, json } from 'itty-router';
+import { validate } from '@telegram-apps/init-data-node/web';
 import tmaHTML from './tma.html';
-import {addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY} from './dao.js';
-import {sendTelegramRequest, setMyCommands, telegramWebhookHandler} from './telegram.js';
-import {validate} from '@telegram-apps/init-data-node/web';
+import { BLOCK_LIST_KEY, WHITE_LIST_KEY, addAddress, loadArrayFromDB, loadMailCache, removeAddress } from './dao.js';
+import { sendTelegramRequest, setMyCommands, telegramWebhookHandler } from './telegram.js';
 
 class HTTPError extends Error {
     constructor(status, message) {
@@ -30,7 +30,7 @@ function createTmaAuthMiddleware(env) {
             await validate(authData, TELEGRAM_TOKEN, {
                 expiresIn: 3600,
             });
-            const userRaw = authData.split('&').map((e) => e.split('=')).filter((v) => v[0] == 'user')[0][1];
+            const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] === 'user')[0][1];
             const user = JSON.parse(decodeURIComponent(userRaw));
             for (const id of TELEGRAM_ID.split(',')) {
                 if (id === `${user.id}`) {
@@ -76,11 +76,11 @@ export function createRouter(env) {
             if (e instanceof HTTPError) {
                 return new Response(JSON.stringify({
                     error: e.message,
-                }), {status: e.status});
+                }), { status: e.status });
             }
             return new Response(JSON.stringify({
                 error: e.message,
-            }), {status: 500});
+            }), { status: 500 });
         },
         finally: [json],
     });
@@ -96,7 +96,7 @@ export function createRouter(env) {
         return new Response(null, {
             status: 302,
             headers: {
-                'location': 'https://github.com/TBXark/mail2telegram',
+                location: 'https://github.com/TBXark/mail2telegram',
             },
         });
     });
@@ -106,9 +106,8 @@ export function createRouter(env) {
             url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
         });
         const commands = await setMyCommands(TELEGRAM_TOKEN);
-        return {webhook, commands};
+        return { webhook, commands };
     });
-
 
     /// Telegram Mini Apps
 
@@ -120,25 +119,24 @@ export function createRouter(env) {
         });
     });
 
-
     router.post('/api/address/add', auth, async (req) => {
-        const {address, type} = await req.json();
+        const { address, type } = await req.json();
         const key = addressParamsCheck(address, type);
         await addAddress(DB, address, key);
-        return {success: true};
+        return { success: true };
     });
 
     router.post('/api/address/remove', auth, async (req) => {
-        const {address, type} = await req.json();
+        const { address, type } = await req.json();
         const key = addressParamsCheck(address, type);
         await removeAddress(DB, address, key);
-        return {success: true};
+        return { success: true };
     });
 
     router.get('/api/address/list', auth, async () => {
         const block = await loadArrayFromDB(DB, BLOCK_LIST_KEY);
         const white = await loadArrayFromDB(DB, WHITE_LIST_KEY);
-        return {block, white};
+        return { block, white };
     });
 
     /// Webhook
@@ -152,7 +150,7 @@ export function createRouter(env) {
         } catch (e) {
             console.error(e);
         }
-        return {success: true};
+        return { success: true };
     });
 
     /// Preview
@@ -163,12 +161,12 @@ export function createRouter(env) {
         const value = await loadMailCache(DB, id);
         const headers = {};
         switch (mode) {
-        case 'html':
-            headers['content-type'] = 'text/html; charset=utf-8';
-            break;
-        default:
-            headers['content-type'] = 'text/plain; charset=utf-8';
-            break;
+            case 'html':
+                headers['content-type'] = 'text/html; charset=utf-8';
+                break;
+            default:
+                headers['content-type'] = 'text/plain; charset=utf-8';
+                break;
         }
         return new Response(value[mode], {
             headers,

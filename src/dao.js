@@ -1,5 +1,5 @@
 import './types.js';
-import {loadArrayFromRaw} from './utils.js';
+import { loadArrayFromRaw } from './utils.js';
 
 export const BLOCK_LIST_KEY = 'BLOCK_LIST';
 export const WHITE_LIST_KEY = 'WHITE_LIST';
@@ -42,10 +42,9 @@ export async function addAddress(db, address, type) {
  */
 export async function removeAddress(db, address, type) {
     const list = await loadArrayFromDB(db, type);
-    const result = list.filter((item) => item !== address);
+    const result = list.filter(item => item !== address);
     await db.put(type, JSON.stringify(result));
 }
-
 
 /**
  * Loads the status of the email.

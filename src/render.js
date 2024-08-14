@@ -1,6 +1,6 @@
 import './types.js';
 
-import {checkAddressStatus} from './helper.js';
+import { checkAddressStatus } from './helper.js';
 
 /**
  * Sends a request to the OpenAI API and returns the first choice.
@@ -37,7 +37,6 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
     const body = await resp.json();
     return body?.choices?.[0]?.message?.content || '';
 }
-
 
 /**
  * Render the email list  mode.
@@ -130,7 +129,7 @@ function renderEmailDetail(text, id) {
  * @param {Environment} env - The environment object.
  * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
  */
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line unused-imports/no-unused-vars
 export async function renderEmailPreviewMode(mail, env) {
     return renderEmailDetail(mail.text.substring(0, 4096), mail.id);
 }
@@ -156,7 +155,6 @@ export async function renderEmailSummaryMode(mail, env) {
     req.text = await sendOpenAIRequest(key, endpoint, model, prompt);
     return req;
 }
-
 
 /**
  * Render the email debug  mode.

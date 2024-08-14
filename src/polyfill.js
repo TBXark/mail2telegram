@@ -1,22 +1,6 @@
-/**
- * Get the global object
- * @returns {object}
- */
-function getGlobal() {
-    if (typeof self !== 'undefined') {
-        return self;
-    }
-    if (typeof window !== 'undefined') {
-        return window;
-    }
-    if (typeof global !== 'undefined') {
-        return global;
-    }
-    return undefined;
-}
-
+/* eslint-disable unicorn/no-new-buffer */
 if (typeof Buffer === 'undefined') {
-    getGlobal().Buffer = class Buffer extends ArrayBuffer {
+    globalThis.Buffer = class Buffer extends ArrayBuffer {
         constructor(bufferOrLength) {
             if (bufferOrLength instanceof ArrayBuffer) {
                 super(bufferOrLength.byteLength);
@@ -42,14 +26,13 @@ if (typeof Buffer === 'undefined') {
 
         toString(encoding) {
             switch (encoding) {
-            case 'hex':
-                return Array.from(new Uint8Array(this)).map((b) => b.toString(16).padStart(2, '0')).join('');
-            case 'base64':
-                return btoa(String.fromCharCode.apply(null, new Uint8Array(this)));
-            default:
-                return new TextDecoder(encoding).decode(new Uint8Array(this));
+                case 'hex':
+                    return Array.from(new Uint8Array(this)).map(b => b.toString(16).padStart(2, '0')).join('');
+                case 'base64':
+                    return btoa(String.fromCharCode.apply(null, new Uint8Array(this)));
+                default:
+                    return new TextDecoder(encoding).decode(new Uint8Array(this));
             }
         }
     };
-
 }

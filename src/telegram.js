@@ -1,7 +1,7 @@
-import {renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode} from './render.js';
-import {parseEmail} from './parse.js';
+import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode } from './render.js';
+import { parseEmail } from './parse.js';
 import './types.js';
-import {loadMailCache} from './dao.js';
+import { loadMailCache } from './dao.js';
 
 const TmaModeDescription = {
     test: 'Test an email address',
@@ -45,11 +45,11 @@ export async function sendMailToTelegram(message, env) {
         MAX_EMAIL_SIZE_POLICY,
     } = env;
 
-    const ttl = parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
-    const maxSize = parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
+    const ttl = Number.parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
+    const maxSize = Number.parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
     const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
     const mail = await parseEmail(message, maxSize, maxSizePolicy);
-    await DB.put(mail.id, JSON.stringify(mail), {expirationTtl: ttl});
+    await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
     const req = await renderEmailListMode(mail, env);
     for (const id of TELEGRAM_ID.split(',')) {
         req.chat_id = id;
@@ -98,7 +98,6 @@ async function telegramCommandHandler(message, env) {
     return handleOpenTMACommand(env, '', `Unknown command: ${command}, try to reinitialize the bot.`)(message);
 }
 
-
 /**
  * Handles the ID command by sending the chat ID to the user.
  * @param {object} env - The environment object containing the Telegram token.
@@ -143,7 +142,6 @@ function handleOpenTMACommand(env, mode, text) {
     };
 }
 
-
 /**
  * Handles the incoming Telegram callback.
  * @param {TelegramCallbackQuery} callback - The Telegram callback object.
@@ -162,7 +160,7 @@ async function telegramCallbackHandler(callback, env) {
     const chatId = callback.message?.chat?.id;
     const messageId = callback.message?.message_id;
 
-    console.log(`Received callback: ${JSON.stringify({data, callbackId, chatId, messageId})}`);
+    console.log(`Received callback: ${JSON.stringify({ data, callbackId, chatId, messageId })}`);
 
     const sendAlert = async (text) => {
         await sendTelegramRequest(TELEGRAM_TOKEN, 'answerCallbackQuery', {
@@ -172,7 +170,7 @@ async function telegramCallbackHandler(callback, env) {
         });
     };
 
-    const renderHandlerBuilder = (render) => async (arg) => {
+    const renderHandlerBuilder = render => async (arg) => {
         const value = await loadMailCache(DB, arg);
         if (!value) {
             throw new Error('Error: Email not found or expired.');
@@ -257,5 +255,3 @@ export async function setMyCommands(token) {
     };
     return await sendTelegramRequest(token, 'setMyCommands', body);
 }
-
-

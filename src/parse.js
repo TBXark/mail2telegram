@@ -1,5 +1,5 @@
 import PostalMime from 'postal-mime';
-import {convert} from 'html-to-text';
+import { convert } from 'html-to-text';
 import './types.js';
 
 /**
@@ -27,7 +27,6 @@ async function streamToArrayBuffer(stream, streamSize) {
     return result.slice(0, bytesRead);
 }
 
-
 /**
  * Parse an email message.
  * @param {EmailMessage} message - The email message to be parsed.
@@ -48,16 +47,16 @@ export async function parseEmail(message, maxSize, maxSizePolicy) {
     let currentMode = 'untruncate';
     if (bufferSize > maxSize) {
         switch (maxSizePolicy) {
-        case 'unhandled':
-            cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
-            cache.html = cache.text;
-            return cache;
-        case 'truncate':
-            bufferSize = maxSize;
-            currentMode = 'truncate';
-            break;
-        default:
-            break;
+            case 'unhandled':
+                cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
+                cache.html = cache.text;
+                return cache;
+            case 'truncate':
+                bufferSize = maxSize;
+                currentMode = 'truncate';
+                break;
+            default:
+                break;
         }
     }
     try {
