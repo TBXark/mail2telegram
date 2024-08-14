@@ -1,10 +1,11 @@
 import './src/polyfill.js';
-import './src/types.js';
 import { sendMailToTelegram } from './src/telegram.js';
 import { loadMailStatus } from './src/dao.js';
 import { createRouter } from './src/route.js';
 import { isMessageBlock } from './src/helper.js';
 import { parseEmail } from './src/parse.js';
+
+import './src/types.js';
 
 /**
  * Handles the fetch request.
@@ -41,7 +42,7 @@ async function emailHandler(message, env, ctx) {
         MAX_EMAIL_SIZE,
         MAX_EMAIL_SIZE_POLICY,
     } = env;
-    
+
     const id = message.headers.get('Message-ID');
     const isBlock = await isMessageBlock(message, env);
     const isGuardian = GUARDIAN_MODE === 'true';

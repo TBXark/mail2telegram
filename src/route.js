@@ -31,8 +31,7 @@ function createTmaAuthMiddleware(env) {
             await validate(authData, TELEGRAM_TOKEN, {
                 expiresIn: 3600,
             });
-            const userRaw = authData.split('&').map(e => e.split('=')).filter(v => v[0] === 'user')[0][1];
-            const user = JSON.parse(decodeURIComponent(userRaw));
+            const user = JSON.parse(new URLSearchParams(authData).get('user'));
             for (const id of TELEGRAM_ID.split(',')) {
                 if (id === `${user.id}`) {
                     return;
