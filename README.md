@@ -24,6 +24,12 @@ This is a Telegram Bot based on Cloudflare Email Routing Worker, which can conve
 
 ## Installation
 
+### 0. Configure Telegram
+
+1. Create a bot to obtain a token, use `@BotFather > /newbot`, create a bot and then copy the token.
+2. Call `https://project_name.user_name.workers.dev/init` to bind the Webhook, and check the returned result to confirm the binding status.
+3. To use Telegram mini programs, you must set a privacy policy. Please visit `@BotFather > /mybots > (select one) > Edit Bot > Edit Privacy Policy`, and then set it to the default privacy policy for Telegram mini programs: `https://telegram.org/privacy-tpa`
+
 ### 1. Deploy Workers
 
 #### 1.1 Deploy via Command Line

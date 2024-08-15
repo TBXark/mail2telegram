@@ -23,6 +23,12 @@ mail2telegram
 
 ## 安装流程
 
+### 0. 配置Telegram
+
+1. 创建bot获得token，使用`@BotFather > /newbot`，创建一个机器人然后复制token。
+2. 调用 `https://project_name.user_name.workers.dev/init` 即可绑定Webhook，查看返回结果确认绑定状态。
+3. 为了使用Telegram小程序你必须得设置隐私政策，请访问 `@BotFather > /mybots > （选择一个） > 编辑机器人 > 编辑隐私政策`，然后设置成telegram小程序默认的隐私政策：`https://telegram.org/privacy-tpa`
+
 ### 1.部署Workers
 
 #### 1.1 使用命令行部署
@@ -52,11 +58,6 @@ mail2telegram
 4. `FORWARD_LIST`中的邮箱地址应该是要在 `Cloudflare Dashboard - Email Routing - Destination addresses` 中添加认证之后才能收到邮件
 
 
-### 3. 绑定Telegram Webhook
-
-调用 `https://project_name.user_name.workers.dev/init` 即可绑定Webhook，查看返回结果确认绑定状态。
-
-
 ## 配置
 
 位置：Workers和Pages - 你的worker名称 - 设置 - 变量
@@ -79,6 +80,7 @@ mail2telegram
 | MAX_EMAIL_SIZE_POLICY  | 可选值为`unhandled`,`truncate`,`continute`。 `unhandled`表示不处理只返回邮件头信息不解析邮件正文，`truncate`表示截断邮件正文只解析允许的大小，`continute`表示继续处理不管大小限制。默认为`truncate`。这个策略只影响Telegram推送消息，不影响邮件转发。 |
 | DB                     | 在下方的 `KV 命名空间绑定` 处将数据库绑定到worker, `变量名称`必须为`DB`，`KV 命名空间`选新建好的任意KV                                                                                                     |
 
+
 ## Telegram Mini Apps
 
 旧版使用命令方式管理黑白名单已废弃，现在使用小程序的方式管理黑白名单。环境变量中的黑白名单无法在小程序中显示和修改。
@@ -87,6 +89,7 @@ mail2telegram
 | 黑名单                            | 白名单                            | 名单测试                             |
 |:-------------------------------|:-------------------------------|:---------------------------------|
 | ![image](./tma_block_list.png) | ![image](./tma_white_list.png) | ![image](./tma_test_address.png) |
+
 
 ## 使用说明
 
@@ -101,6 +104,8 @@ To: [recipient]
 (Preview)(Summary)(Text)(HTML)
 
 ```
+
+
 ### 邮件预览
 当邮件转发通知到Telegram的时候只有标题，发件人，收件人还有四个按钮。
 
@@ -120,7 +125,6 @@ To: [recipient]
 需要生成白名单/黑名单的正则JSON数组字符串可以使用这个小工具，里面还有几个demo。 [regexs2jsArray](https://codepen.io/tbxark/full/JjxdNEX)
 
 建议使用小程序进行黑白名单的管理，可以更方便的添加和删除。现有环境变量中的黑白名单即将废弃。
-
 
 ### 邮件附件
 此Bot展示不支持附件，如果你需要附件支持可以联合我的另外一个项目[testmail-viewer](https://github.com/TBXark/testmail-viewer), 使用`FORWARD_LIST`将邮件转发到你的testmail，这样你就可以使用[testmail-viewer](https://github.com/TBXark/testmail-viewer)下载你的附件。
