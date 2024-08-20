@@ -12,7 +12,7 @@ if (typeof Buffer === 'undefined') {
 
         static from(data, encoding) {
             if (typeof data === 'string') {
-                const encoder = new TextEncoder(encoding);
+                const encoder = new TextEncoder();
                 return new Buffer(encoder.encode(data).buffer);
             }
             if (data instanceof ArrayBuffer) {
