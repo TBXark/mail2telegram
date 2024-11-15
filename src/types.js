@@ -46,29 +46,6 @@
  */
 
 /**
- * @typedef {object} TelegramMessage
- * @property {object} chat - The chat object.
- * @property {number| string} chat.id - The chat ID.
- * @property {object} from - The sender object.
- * @property {number | string} from.id - The sender ID.
- * @property {number} message_id - The message ID.
- * @property {string} text - The text content of the message.
- */
-
-/**
- * @typedef {object} TelegramCallbackQuery
- * @property {string} id - The callback query ID.
- * @property {string} data - The callback data.
- * @property {TelegramMessage} message - The message object.
- */
-
-/**
- * @typedef {object} TelegramWebhookRequest
- * @property {TelegramMessage} [message] - The message object.
- * @property {TelegramCallbackQuery} [callback_query] - The callback query object.
- */
-
-/**
  * @typedef {object} EmailCache
  * @property {string} id - The ID of the email cache.
  * @property {string} messageId - The Message-ID of the email.
@@ -77,20 +54,4 @@
  * @property {string} subject - The subject of the email.
  * @property {string} [html] - The HTML content of the email.
  * @property {string} [text] - The text content of the email.
- */
-
-/**
- * @typedef {object} TelegramInlineKeyboardButton
- * @property {string} text - The text of the button.
- * @property {string} [callback_data] - The callback data of the button.
- * @property {string} [url] - The URL of the button.
- */
-
-/**
- * @typedef {object} TelegramSendMessageRequest
- * @property {string|number} chat_id - The chat ID.
- * @property {string} text - The text content of the message.
- * @property {boolean} disable_web_page_preview - Whether to disable the web page preview.
- * @property {object} reply_markup - The reply markup.
- * @property {TelegramInlineKeyboardButton[][]} reply_markup.inline_keyboard - The inline keyboard.
  */

@@ -1,6 +1,6 @@
 import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode } from './render.js';
 import { loadMailCache } from './dao.js';
-
+import 'telegram-bot-api-jsdoc';
 import './types.js';
 
 const TmaModeDescription = {
@@ -49,7 +49,7 @@ export async function sendMailToTelegram(mail, env) {
 
 /**
  * @typedef {Function} TelegramMessageHandler
- * @param {TelegramMessage} message - The Telegram message object.
+ * @param {Message} message - The Telegram message object.
  * @returns {Promise<Response>} The fetch response.
  */
 
@@ -59,7 +59,7 @@ export async function sendMailToTelegram(mail, env) {
 
 /**
  * Handles the incoming Telegram command
- * @param {TelegramMessage} message - The Telegram message object.
+ * @param {Message} message - The Telegram message object.
  * @param {object} env - The environment object.
  * @returns {Promise<Response>|null} The fetch response.
  */
@@ -134,7 +134,7 @@ function handleOpenTMACommand(env, mode, text) {
 
 /**
  * Handles the incoming Telegram callback.
- * @param {TelegramCallbackQuery} callback - The Telegram callback object.
+ * @param {CallbackQuery} callback - The Telegram callback object.
  * @param {object} env - The environment object.
  * @returns {Promise<void>} The fetch response.
  */
@@ -206,7 +206,7 @@ async function telegramCallbackHandler(callback, env) {
  */
 export async function telegramWebhookHandler(req, env) {
     /**
-     * @type {TelegramWebhookRequest}
+     * @type {Update}
      */
     const body = await req.json();
     if (body?.message) {

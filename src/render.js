@@ -1,5 +1,5 @@
 import { checkAddressStatus } from './helper.js';
-
+import 'telegram-bot-api-jsdoc';
 import './types.js';
 
 /**
@@ -42,7 +42,7 @@ async function sendOpenAIRequest(key, endpoint, model, prompt) {
  * Render the email list  mode.
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<SendMessageParams>} The rendered email list mode object.
  */
 export async function renderEmailListMode(mail, env) {
     const {
@@ -100,7 +100,7 @@ To\t\t:\t${mail.to}
  * Render the email detail.
  * @param {string} text - The email text.
  * @param {string} id - The email ID.
- * @returns {TelegramSendMessageRequest} - The rendered email detail.
+ * @returns {SendMessageParams} - The rendered email detail.
  */
 function renderEmailDetail(text, id) {
     return {
@@ -127,7 +127,7 @@ function renderEmailDetail(text, id) {
  * Render the email preview  mode.
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<SendMessageParams>} The rendered email list mode object.
  */
 // eslint-disable-next-line unused-imports/no-unused-vars
 export async function renderEmailPreviewMode(mail, env) {
@@ -138,7 +138,7 @@ export async function renderEmailPreviewMode(mail, env) {
  * Render the email summary  mode.
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<SendMessageParams>} The rendered email list mode object.
  */
 export async function renderEmailSummaryMode(mail, env) {
     let {
@@ -160,7 +160,7 @@ export async function renderEmailSummaryMode(mail, env) {
  * Render the email debug  mode.
  * @param {EmailCache} mail - The email object.
  * @param {Environment} env - The environment object.
- * @returns {Promise<TelegramSendMessageRequest>} The rendered email list mode object.
+ * @returns {Promise<SendMessageParams>} The rendered email list mode object.
  */
 export async function renderEmailDebugMode(mail, env) {
     const addresses = [

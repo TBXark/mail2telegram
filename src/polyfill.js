@@ -21,7 +21,7 @@ if (typeof Buffer === 'undefined') {
             if (data instanceof Uint8Array) {
                 return new Buffer(data.buffer);
             }
-            throw new Error('Unsupported data type');
+            throw new Error(`Unsupported data type: ${typeof data}, encoding: ${encoding}`);
         }
 
         toString(encoding) {
