@@ -1,9 +1,9 @@
-import './src/polyfill.js';
-import { sendMailToTelegram } from './src/telegram.js';
 import { loadMailStatus } from './src/dao.js';
-import { createRouter } from './src/route.js';
 import { isMessageBlock } from './src/helper.js';
 import { parseEmail } from './src/parse.js';
+import { createRouter } from './src/route.js';
+import { sendMailToTelegram } from './src/telegram.js';
+import './src/polyfill.js';
 
 import './src/types.js';
 

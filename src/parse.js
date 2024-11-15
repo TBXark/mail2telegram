@@ -1,5 +1,5 @@
-import PostalMime from 'postal-mime';
 import { convert } from 'html-to-text';
+import PostalMime from 'postal-mime';
 
 import './types.js';
 

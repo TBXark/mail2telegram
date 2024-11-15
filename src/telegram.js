@@ -1,5 +1,5 @@
-import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode } from './render.js';
 import { loadMailCache } from './dao.js';
+import { renderEmailDebugMode, renderEmailListMode, renderEmailPreviewMode, renderEmailSummaryMode } from './render.js';
 import 'telegram-bot-api-jsdoc';
 import './types.js';
 

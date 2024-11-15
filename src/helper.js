@@ -1,5 +1,5 @@
+import { BLOCK_LIST_KEY, loadArrayFromDB, WHITE_LIST_KEY } from './dao.js';
 import { loadArrayFromRaw } from './utils.js';
-import { BLOCK_LIST_KEY, WHITE_LIST_KEY, loadArrayFromDB } from './dao.js';
 
 /**
  * @param {string} address - The address to be checked.

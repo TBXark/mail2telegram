@@ -1,8 +1,8 @@
-import { Router, json } from 'itty-router';
 import { validate } from '@telegram-apps/init-data-node/web';
-import tmaHTML from './tma.html';
-import { BLOCK_LIST_KEY, WHITE_LIST_KEY, addAddress, loadArrayFromDB, loadMailCache, removeAddress } from './dao.js';
+import { json, Router } from 'itty-router';
+import { addAddress, BLOCK_LIST_KEY, loadArrayFromDB, loadMailCache, removeAddress, WHITE_LIST_KEY } from './dao.js';
 import { sendTelegramRequest, setMyCommands, telegramWebhookHandler } from './telegram.js';
+import tmaHTML from './tma.html';
 
 import './types.js';
 
