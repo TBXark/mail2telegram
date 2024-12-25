@@ -4,7 +4,7 @@ import type { Environment } from '../../types';
 import { validate } from '@telegram-apps/init-data-node/web';
 import { json, Router } from 'itty-router';
 import { Dao } from '../../db';
-import { createTelegramBotAPI, TelegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
+import { createTelegramBotAPI, telegramCommands, telegramWebhookHandler, tmaHTML } from '../../telegram';
 
 class HTTPError extends Error {
     readonly status: number;
@@ -95,7 +95,7 @@ function createRouter(env: Environment): RouterType {
             url: `https://${DOMAIN}/telegram/${TELEGRAM_TOKEN}/webhook`,
         });
         const commands = await api.setMyCommands({
-            commands: TelegramCommands,
+            commands: telegramCommands,
         });
         return {
             webhook: await webhook.json(),

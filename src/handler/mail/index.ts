@@ -4,19 +4,22 @@ import { Dao } from '../../db';
 import { isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
 
-export async function sendMailToTelegram(mail: EmailCache, env: Environment): Promise<void> {
+export async function sendMailToTelegram(mail: EmailCache, env: Environment): Promise<number[]> {
     const {
         TELEGRAM_TOKEN,
         TELEGRAM_ID,
     } = env;
     const req = await renderEmailListMode(mail, env);
     const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    const messageID: number[] = [];
     for (const id of TELEGRAM_ID.split(',')) {
-        await api.sendMessage({
+        const msg = await api.sendMessageWithReturns({
             chat_id: id,
             ...req,
         });
+        messageID.push(msg.result.message_id);
     }
+    return messageID;
 }
 
 export async function emailHandler(message: ForwardableEmailMessage, env: Environment): Promise<void> {
@@ -35,7 +38,7 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
     const isBlock = await isMessageBlock(message, env);
     const isGuardian = GUARDIAN_MODE === 'true';
     const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
-    const statusTTL = { expirationTtl: 60 * 60 };
+    const statusTTL = 60 * 60;
     const status = await dao.loadMailStatus(id, isGuardian);
 
     // Reject the email
@@ -57,7 +60,7 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
                 await message.forward(add);
                 if (isGuardian) {
                     status.forward.push(add);
-                    await DB.put(id, JSON.stringify(status), statusTTL);
+                    await dao.saveMailStatus(id, status, statusTTL);
                 }
             } catch (e) {
                 console.error(e);
@@ -75,12 +78,15 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
             const maxSize = Number.parseInt(MAX_EMAIL_SIZE || '', 10) || 512 * 1024;
             const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
             const mail = await parseEmail(message, maxSize, maxSizePolicy);
-            await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
-            await sendMailToTelegram(mail, env);
+            await dao.saveMailCache(mail.id, mail, ttl);
+            const msgIDs = await sendMailToTelegram(mail, env);
+            for (const msgID of msgIDs) {
+                await dao.saveTelegramIDToMailID(`${msgID}`, mail.id, ttl);
+            }
         }
         if (isGuardian) {
             status.telegram = true;
-            await DB.put(id, JSON.stringify(status), statusTTL);
+            await dao.saveMailStatus(id, status, statusTTL);
         }
     } catch (e) {
         console.error(e);

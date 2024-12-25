@@ -34,6 +34,7 @@ export interface Environment {
     OPENAI_CHAT_MODEL?: string;
     SUMMARY_TARGET_LANG?: string;
     GUARDIAN_MODE?: string;
+    RESEND_API_KEY?: string;
     DB: KVNamespace;
     DEBUG?: string;
 }

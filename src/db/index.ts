@@ -58,6 +58,10 @@ export class Dao {
         return defaultStatus;
     }
 
+    async saveMailStatus(id: string, status: EmailHandleStatus, ttl?: number): Promise<void> {
+        await this.db.put(id, JSON.stringify(status), { expirationTtl: ttl });
+    }
+
     async loadMailCache(id: string): Promise<EmailCache | null> {
         try {
             const raw = await this.db.get(id);
@@ -68,6 +72,18 @@ export class Dao {
             console.error(e);
         }
         return null;
+    }
+
+    async saveMailCache(id: string, cache: EmailCache, ttl?: number): Promise<void> {
+        await this.db.put(id, JSON.stringify(cache), { expirationTtl: ttl });
+    }
+
+    async telegramIDToMailID(id: string): Promise<string | null> {
+        return await this.db.get(`TelegramID2MailID:${id}`);
+    }
+
+    async saveTelegramIDToMailID(id: string, mailID: string, ttl?: number): Promise<void> {
+        await this.db.put(`TelegramID2MailID:${id}`, mailID, { expirationTtl: ttl });
     }
 }
 

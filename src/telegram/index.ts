@@ -1,4 +1,4 @@
-import tmaHTML from '/tma.html';
+import tmaHTML from './tma.html';
 
 export * from './api';
 export * from './const';
