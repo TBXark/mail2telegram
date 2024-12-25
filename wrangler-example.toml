@@ -1,6 +1,7 @@
 name = "mail2telegram"
-main = "index.js"
-compatibility_date = "2024-06-03"
+main = "src/index.ts"
+compatibility_date = "2024-11-11"
+compatibility_flags = ["nodejs_compat_v2"]
 kv_namespaces = [
   { binding = "DB", id = "" }
 ]

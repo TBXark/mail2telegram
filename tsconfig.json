@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "dom"
+    ],
+    "rootDir": ".",
+    "types": ["node"],
+    "allowJs": true,
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "build",
+    "removeComments": true,
+    "esModuleInterop": true,
+    "composite": true,
+    "sourceMap": true
+  },
+  "exclude": ["**/node_modules", "**/build"]
+}

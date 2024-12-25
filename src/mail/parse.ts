@@ -1,15 +1,9 @@
+import type { ForwardableEmailMessage, ReadableStream } from '@cloudflare/workers-types';
+import type { EmailCache, MaxEmailSizePolicy } from '../types';
 import { convert } from 'html-to-text';
 import PostalMime from 'postal-mime';
 
-import './types.js';
-
-/**
- * Converts a ReadableStream to an ArrayBuffer.
- * @param {ReadableStream} stream - The ReadableStream to convert.
- * @param {number} streamSize - The size of the stream.
- * @returns {Promise<Uint8Array>} The converted ArrayBuffer.
- */
-async function streamToArrayBuffer(stream, streamSize) {
+async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>, streamSize: number): Promise<Uint8Array> {
     const result = new Uint8Array(streamSize);
     const reader = stream.getReader();
     let bytesRead = 0;
@@ -28,21 +22,14 @@ async function streamToArrayBuffer(stream, streamSize) {
     return result.slice(0, bytesRead);
 }
 
-/**
- * Parse an email message.
- * @param {EmailMessage} message - The email message to be parsed.
- * @param {number} maxSize - The maximum size of the email in bytes.
- * @param {string} maxSizePolicy - The policy of emails that exceed the maximum size.
- * @returns {Promise<EmailCache>} - A promise that resolves to the ID of the saved email.
- */
-export async function parseEmail(message, maxSize, maxSizePolicy) {
+export async function parseEmail(message: ForwardableEmailMessage, maxSize: number, maxSizePolicy: MaxEmailSizePolicy): Promise<EmailCache> {
     const id = crypto.randomUUID();
-    const cache = {
+    const cache: EmailCache = {
         id,
-        messageId: message.headers.get('Message-ID'),
+        messageId: message.headers.get('Message-ID') || id,
         from: message.from,
         to: message.to,
-        subject: message.headers.get('Subject'),
+        subject: message.headers.get('Subject') || '',
     };
     let bufferSize = message.rawSize;
     let currentMode = 'untruncate';
@@ -78,7 +65,7 @@ export async function parseEmail(message, maxSize, maxSizePolicy) {
             cache.text += `\n\n[Truncated] The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
         }
     } catch (e) {
-        const msg = `Error parsing email: ${e.message}`;
+        const msg = `Error parsing email: ${(e as Error).message}`;
         cache.text = msg;
         cache.html = msg;
     }

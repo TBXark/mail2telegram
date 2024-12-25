@@ -45,7 +45,7 @@ mail2telegram
 
 #### 1.2 使用复制粘贴部署
 
-1. 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.js`](../build/index.js)
+1. 如果你不想使用命令行部署只想复制粘贴可以使用我编译好的版本 > [`index.ts`](../build/index.js)
 2. 使用复制粘贴部署需要手动在项目配置页面设置环境变量
 3. 绑定 `KV Namespace Bindings` 数据库到worker, 名字必须为`DB`
 

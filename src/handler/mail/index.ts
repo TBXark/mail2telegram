@@ -1,38 +1,25 @@
-import { loadMailStatus } from './src/dao.js';
-import { isMessageBlock } from './src/helper.js';
-import { parseEmail } from './src/parse.js';
-import { createRouter } from './src/route.js';
-import { sendMailToTelegram } from './src/telegram.js';
-import './src/polyfill.js';
+import type { ForwardableEmailMessage } from '@cloudflare/workers-types';
+import type { EmailCache, Environment } from '../../types';
+import { Dao } from '../../db';
+import { isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
+import { createTelegramBotAPI } from '../../telegram';
 
-import './src/types.js';
-
-/**
- * Handles the fetch request.
- * @param {Request} request - The fetch request object.
- * @param {Environment} env - The environment object.
- * @param {object} ctx - The context object.
- * @returns {Promise<Response>} The fetch response.
- */
-// eslint-disable-next-line unused-imports/no-unused-vars
-async function fetchHandler(request, env, ctx) {
-    const router = createRouter(env);
-    return router.fetch(request).catch((e) => {
-        return new Response(JSON.stringify({
-            error: e.message,
-        }), { status: 500 });
-    });
+export async function sendMailToTelegram(mail: EmailCache, env: Environment): Promise<void> {
+    const {
+        TELEGRAM_TOKEN,
+        TELEGRAM_ID,
+    } = env;
+    const req = await renderEmailListMode(mail, env);
+    const api = createTelegramBotAPI(TELEGRAM_TOKEN);
+    for (const id of TELEGRAM_ID.split(',')) {
+        await api.sendMessage({
+            chat_id: id,
+            ...req,
+        });
+    }
 }
 
-/**
- * Handles incoming email messages.
- * @param {EmailMessage} message - The email message object.
- * @param {Environment} env - The environment variables.
- * @param {object} ctx - The context object.
- * @returns {Promise<void>} - A promise that resolves when the email is processed.
- */
-// eslint-disable-next-line unused-imports/no-unused-vars
-async function emailHandler(message, env, ctx) {
+export async function emailHandler(message: ForwardableEmailMessage, env: Environment): Promise<void> {
     const {
         FORWARD_LIST,
         BLOCK_POLICY,
@@ -43,12 +30,13 @@ async function emailHandler(message, env, ctx) {
         MAX_EMAIL_SIZE_POLICY,
     } = env;
 
-    const id = message.headers.get('Message-ID');
+    const dao = new Dao(DB);
+    const id = message.headers.get('Message-ID') || '';
     const isBlock = await isMessageBlock(message, env);
     const isGuardian = GUARDIAN_MODE === 'true';
     const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
     const statusTTL = { expirationTtl: 60 * 60 };
-    const status = await loadMailStatus(DB, id, isGuardian);
+    const status = await dao.loadMailStatus(id, isGuardian);
 
     // Reject the email
     if (isBlock && blockPolicy.includes('reject')) {
@@ -84,7 +72,7 @@ async function emailHandler(message, env, ctx) {
         const blockTelegram = isBlock && blockPolicy.includes('telegram');
         if (!status.telegram && !blockTelegram) {
             const ttl = Number.parseInt(MAIL_TTL, 10) || 60 * 60 * 24;
-            const maxSize = Number.parseInt(MAX_EMAIL_SIZE, 10) || 512 * 1024;
+            const maxSize = Number.parseInt(MAX_EMAIL_SIZE || '', 10) || 512 * 1024;
             const maxSizePolicy = MAX_EMAIL_SIZE_POLICY || 'truncate';
             const mail = await parseEmail(message, maxSize, maxSizePolicy);
             await DB.put(mail.id, JSON.stringify(mail), { expirationTtl: ttl });
@@ -98,8 +86,3 @@ async function emailHandler(message, env, ctx) {
         console.error(e);
     }
 }
-
-export default {
-    fetch: fetchHandler,
-    email: emailHandler,
-};
