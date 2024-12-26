@@ -36,17 +36,15 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
         to: message.to,
         subject: message.headers.get('Subject') || '',
     };
-    let bufferSize = message.rawSize;
     let isTruncate = false;
     let emailRaw = message.raw;
     try {
-        switch (bufferSize > maxSize ? maxSizePolicy : 'continue') {
+        switch (message.rawSize > maxSize ? maxSizePolicy : 'continue') {
             case 'unhandled':
-                cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
+                cache.text = `The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
                 cache.html = cache.text;
                 return cache;
             case 'truncate':
-                bufferSize = maxSize;
                 emailRaw = truncateStream(message.raw, maxSize);
                 isTruncate = true;
                 break;

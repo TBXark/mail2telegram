@@ -428,296 +428,345 @@ var tma_default = `<!DOCTYPE html>
 <html lang="zh">
 
 <head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>mail2telegram</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"><\/script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>
-    <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
-    <style>
-        body {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>mail2telegram</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"><\/script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"><\/script>
+  <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
+  <style>
+    body {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-        table {
-            width: 100%;
-        }
+    table {
+      width: 100%;
+    }
 
-        th,
-        td {
-            text-align: left;
-        }
+    th,
+    td {
+      text-align: left;
+    }
 
-        th:last-child,
-        td:last-child {
-            width: 80px;
-            text-align: center;
-        }
+    th:last-child,
+    td:last-child {
+      width: 80px;
+      text-align: center;
+    }
 
-        button {
-            padding: 5px 10px;
-            min-width: 80px;
-        }
+    button {
+      padding: 5px 10px;
+      min-width: 80px;
+    }
 
-        .growContainer {
-            display: flex;
-            align-items: center;
-        }
+    .growContainer {
+      display: flex;
+      align-items: center;
+    }
 
-        .growItem {
-            max-width: 100%;
-            flex-grow: 1;
-        }
-    </style>
+    .growItem {
+      max-width: 100%;
+      flex-grow: 1;
+    }
+  </style>
 </head>
 
 <body>
-<div id="app">
-    <h3 class="growContainer">
+  <div id="app">
+    <div v-if="func === 'list'">
+      <h3 class="growContainer">
         List Mode
         <select class="growItem" style="margin-left: 10px;" v-model="mode">
-            <option value="block">Block list</option>
-            <option value="white">White list</option>
-            <option value="test">Test address</option>
+          <option value="block">Block list</option>
+          <option value="white">White list</option>
+          <option value="test">Test address</option>
         </select>
-    </h3>
-    <p v-if="tipMessage">{{ tipMessage }}</p>
-    <table>
+      </h3>
+      <p v-if="tipMessage">{{ tipMessage }}</p>
+      <table>
         <thead>
-        <tr>
+          <tr>
             <th>address</th>
             <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
-        </tr>
+          </tr>
         </thead>
         <tbody v-if="mode!=='test'">
-        <tr>
+          <tr>
             <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-                <button @click="addAddress">Add</button>
+              <button @click="addAddress">Add</button>
             </td>
-        </tr>
-        <tr :key="index" v-for="(address, index) in addresses">
+          </tr>
+          <tr :key="index" v-for="(address, index) in addresses">
             <td>{{ address }}</td>
             <td>
-                <button @click="removeAddress(index)">Delete</button>
+              <button @click="removeAddress(index)">Delete</button>
             </td>
-        </tr>
+          </tr>
         </tbody>
         <tbody v-else>
-        <tr>
+          <tr>
             <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-                <button @click="testAddress">Test</button>
+              <button @click="testAddress">Test</button>
             </td>
-        </tr>
-        <tr :key="index" v-for="(item, index) in addresses">
+          </tr>
+          <tr :key="index" v-for="(item, index) in addresses">
             <td>{{ item.address }}</td>
             <td>{{ item.result }}</td>
-        </tr>
+          </tr>
         </tbody>
-    </table>
-</div>
+      </table>
+    </div>
+    <div v-if="func === 'sendmail'">
+      <h3>Send Mail</h3>
+      <p v-if="tipMessage">{{ tipMessage }}</p>
+      <table>
+        <tbody>
+          <tr>
+            <td style="width: 10px;">From</td>
+            <td>
+              <input v-model="sendMail.from" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>To</td>
+            <td>
+              <input v-model="sendMail.to" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>Subject</td>
+            <td>
+              <input v-model="sendMail.subject" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>Text</td>
+            <td>
+              <textarea v-model="sendMail.text" class="growItem"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <button>Send</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<script>
-  const {createApp, computed, ref, onMounted, watch} = Vue;
+  <script>
+    const { createApp, computed, ref, onMounted, watch } = Vue;
 
 
-  class Client {
+    class Client {
 
-    constructor(tma) {
-      this.tma = tma;
-      this.addAddress = this.addAddress.bind(this);
-      this.removeAddress = this.removeAddress.bind(this);
-      this.loadAddress = this.loadAddress.bind(this);
-    }
-
-    async request(path, method, body) {
-      const res = await fetch(path, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': \`tma \${this.tma}\`,
-        },
-        body: JSON.stringify(body),
-      }).then(response => response.json());
-      if (res.error) {
-        throw new Error(res.error);
+      constructor(tma) {
+        this.tma = tma;
+        this.addAddress = this.addAddress.bind(this);
+        this.removeAddress = this.removeAddress.bind(this);
+        this.loadAddress = this.loadAddress.bind(this);
       }
-      return res;
-    }
 
-    async addAddress(address, type) {
-      return this.request('/api/address/add', 'POST', {
-        address,
-        type,
-      });
-    }
-
-    async removeAddress(address, type) {
-      return this.request('/api/address/remove', 'POST', {
-        address,
-        type,
-      });
-    }
-
-    async loadAddress(tma) {
-      return this.request('/api/address/list', 'GET');
-    }
-  }
-
-  createApp({
-    setup() {
-
-      const urlParams = new URLSearchParams(window.location.search);
-
-      const blockList = ref([]);
-      const whiteList = ref([]);
-      const testList = ref([]);
-      const tipMessage = ref('');
-      const inputAddress = ref('');
-      const mode = ref(urlParams.get('mode') || 'block');
-      const client = new Client('');
-
-      const addresses = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return blockList.value;
-          case 'white':
-            return whiteList.value;
-          case 'test':
-            return testList.value;
+      async request(path, method, body) {
+        const res = await fetch(path, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': \`tma \${this.tma}\`,
+          },
+          body: JSON.stringify(body),
+        }).then(response => response.json());
+        if (res.error) {
+          throw new Error(res.error);
         }
-      });
+        return res;
+      }
 
-      const inputPlaceholder = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return 'New block address regex';
-          case 'white':
-            return 'New white address regex';
-          case 'test':
-            return 'Test address';
-        }
-      });
+      async addAddress(address, type) {
+        return this.request('/api/address/add', 'POST', {
+          address,
+          type,
+        });
+      }
 
-      const addAddress = async () => {
-        try {
-          if (!inputAddress.value) {
-            return;
+      async removeAddress(address, type) {
+        return this.request('/api/address/remove', 'POST', {
+          address,
+          type,
+        });
+      }
+
+      async loadAddress(tma) {
+        return this.request('/api/address/list', 'GET');
+      }
+    }
+
+    createApp({
+      setup() {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const blockList = ref([]);
+        const whiteList = ref([]);
+        const testList = ref([]);
+        const tipMessage = ref('');
+        const inputAddress = ref('');
+
+        const sendMail = ref({
+          from: '',
+          to: '',
+          subject: '',
+          text: '',
+        })
+
+        const func = ref(urlParams.get('func') || 'list');
+        const mode = ref(urlParams.get('mode') || 'block');
+        const client = new Client('');
+
+        const addresses = computed(() => {
+          switch (mode.value) {
+            case 'block':
+              return blockList.value;
+            case 'white':
+              return whiteList.value;
+            case 'test':
+              return testList.value;
           }
+        });
+
+        const inputPlaceholder = computed(() => {
+          switch (mode.value) {
+            case 'block':
+              return 'New block address regex';
+            case 'white':
+              return 'New white address regex';
+            case 'test':
+              return 'Test address';
+          }
+        });
+
+        const addAddress = async () => {
+          try {
+            if (!inputAddress.value) {
+              return;
+            }
+            const address = inputAddress.value.trim();
+            await client.addAddress(address, mode.value);
+            inputAddress.value = '';
+            switch (mode.value) {
+              case 'block':
+                blockList.value.push(address);
+                break;
+              case 'white':
+                whiteList.value.push(address);
+                break;
+              case 'test':
+                break;
+            }
+            tipMessage.value = null;
+          } catch (error) {
+            tipMessage.value = \`ERROR: \` + error;
+          }
+        };
+
+        const removeAddress = async (index) => {
+          try {
+            const address = addresses.value[index];
+            await client.removeAddress(address, mode.value);
+            switch (mode.value) {
+              case 'block':
+                blockList.value.splice(index, 1);
+                break;
+              case 'white':
+                whiteList.value.splice(index, 1);
+                break;
+              case 'test':
+                break;
+            }
+            tipMessage.value = null;
+          } catch (error) {
+            tipMessage.value = \`ERROR: \` + error;
+          }
+        };
+
+        const testAddressWithPattern = (pattern, address) => {
+          if (pattern.toLowerCase() === address.toLowerCase()) {
+            return true;
+          }
+          try {
+            const regex = new RegExp(pattern, 'i');
+            return !!regex.test(address);
+          } catch (e) {
+            return false;
+          }
+        };
+
+        const testAddress = () => {
+          const test = [];
           const address = inputAddress.value.trim();
-          await client.addAddress(address, mode.value);
+          for (const pattern of blockList.value) {
+            if (testAddressWithPattern(pattern, address)) {
+              test.push({
+                address: pattern,
+                result: 'block',
+              });
+            }
+          }
+          for (const pattern of whiteList.value) {
+            if (testAddressWithPattern(pattern, address)) {
+              test.push({
+                address: pattern,
+                result: 'white',
+              });
+            }
+          }
+          testList.value = test;
+        };
+
+        watch(mode, () => {
           inputAddress.value = '';
-          switch (mode.value) {
-            case 'block':
-              blockList.value.push(address);
-              break;
-            case 'white':
-              whiteList.value.push(address);
-              break;
-            case 'test':
-              break;
+        });
+
+
+        onMounted(async () => {
+          try {
+            client.tma = window.Telegram.WebApp.initData;
+            const { block, white } = await client.loadAddress();
+            blockList.value = block;
+            whiteList.value = white;
+          } catch (error) {
+            tipMessage.value = \`ERROR: \` + error.message;
           }
-          tipMessage.value = null;
-        } catch (error) {
-          tipMessage.value = \`ERROR: \` + error;
-        }
-      };
+        });
 
-      const removeAddress = async (index) => {
-        try {
-          const address = addresses.value[index];
-          await client.removeAddress(address, mode.value);
-          switch (mode.value) {
-            case 'block':
-              blockList.value.splice(index, 1);
-              break;
-            case 'white':
-              whiteList.value.splice(index, 1);
-              break;
-            case 'test':
-              break;
-          }
-          tipMessage.value = null;
-        } catch (error) {
-          tipMessage.value = \`ERROR: \` + error;
-        }
-      };
+        return {
+          addresses,
+          tipMessage,
+          inputAddress,
+          inputPlaceholder,
+          sendMail,
+          mode,
+          func,
+          addAddress,
+          removeAddress,
+          testAddress,
+        };
 
-      const testAddressWithPattern = (pattern, address) => {
-        if (pattern.toLowerCase() === address.toLowerCase()) {
-          return true;
-        }
-        try {
-          const regex = new RegExp(pattern, 'i');
-          return !!regex.test(address);
-        } catch (e) {
-          return false;
-        }
-      };
-
-      const testAddress = () => {
-        const test = [];
-        const address = inputAddress.value.trim();
-        for (const pattern of blockList.value) {
-          if (testAddressWithPattern(pattern, address)) {
-            test.push({
-              address: pattern,
-              result: 'block',
-            });
-          }
-        }
-        for (const pattern of whiteList.value) {
-          if (testAddressWithPattern(pattern, address)) {
-            test.push({
-              address: pattern,
-              result: 'white',
-            });
-          }
-        }
-        testList.value = test;
-      };
-
-      watch(mode, () => {
-        inputAddress.value = '';
-      });
-
-
-      onMounted(async () => {
-        try {
-          client.tma = window.Telegram.WebApp.initData;
-          const {block, white} = await client.loadAddress();
-          blockList.value = block;
-          whiteList.value = white;
-        } catch (error) {
-          tipMessage.value = \`ERROR: \` + error.message;
-        }
-      });
-
-      return {
-        addresses,
-        tipMessage,
-        inputAddress,
-        inputPlaceholder,
-        mode,
-        addAddress,
-        removeAddress,
-        testAddress,
-      };
-
-    },
-  }).mount('#app');
-<\/script>
+      },
+    }).mount('#app');
+  <\/script>
 </body>
 
-</html>
-`;
+</html>`;
 
 // src/telegram/api.ts
 var APIClientBase = class {
@@ -9431,25 +9480,29 @@ var PostalMime = class _PostalMime {
 };
 
 // src/mail/parse.ts
-async function streamToArrayBuffer(stream, streamSize) {
-  const result = new Uint8Array(streamSize);
-  const reader = stream.getReader();
+function truncateStream(stream, maxBytes) {
   let bytesRead = 0;
-  try {
-    while (bytesRead < streamSize) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
+  const tran = new TransformStream({
+    transform(chunk, controller) {
+      if (bytesRead >= maxBytes) {
+        controller.terminate();
+        return;
       }
-      result.set(value, bytesRead);
-      bytesRead += value.length;
+      const remainingBytes = maxBytes - bytesRead;
+      if (chunk.length <= remainingBytes) {
+        controller.enqueue(chunk);
+        bytesRead += chunk.length;
+      } else {
+        const limitedChunk = chunk.slice(0, remainingBytes);
+        controller.enqueue(limitedChunk);
+        bytesRead += remainingBytes;
+        controller.terminate();
+      }
     }
-  } finally {
-    reader.releaseLock();
-  }
-  return result.slice(0, bytesRead);
+  });
+  return stream.pipeThrough(tran);
 }
-async function parseEmail(message, maxSize, maxSizePolicy) {
+async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false) {
   const id = crypto.randomUUID();
   const cache = {
     id,
@@ -9458,26 +9511,29 @@ async function parseEmail(message, maxSize, maxSizePolicy) {
     to: message.to,
     subject: message.headers.get("Subject") || ""
   };
-  let bufferSize = message.rawSize;
-  let currentMode = "untruncate";
-  if (bufferSize > maxSize) {
-    switch (maxSizePolicy) {
+  let isTruncate = false;
+  let emailRaw = message.raw;
+  try {
+    switch (message.rawSize > maxSize ? maxSizePolicy : "continue") {
       case "unhandled":
-        cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
+        cache.text = `The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
         cache.html = cache.text;
         return cache;
       case "truncate":
-        bufferSize = maxSize;
-        currentMode = "truncate";
+        emailRaw = truncateStream(message.raw, maxSize);
+        isTruncate = true;
         break;
       default:
         break;
     }
-  }
-  try {
-    const raw = await streamToArrayBuffer(message.raw, bufferSize);
     const parser = new PostalMime();
-    const email = await parser.parse(raw);
+    const email = await parser.parse(emailRaw);
+    if (useEmlHeaders) {
+      cache.messageId = email.messageId;
+      cache.subject = email.subject || cache.subject;
+      cache.from = email.from.address || cache.from;
+      cache.to = email.to?.map((addr) => addr.address).at(0) || cache.to;
+    }
     if (email.html) {
       cache.html = email.html;
     }
@@ -9486,7 +9542,7 @@ async function parseEmail(message, maxSize, maxSizePolicy) {
     } else if (email.html) {
       cache.text = convert(email.html, {});
     }
-    if (currentMode === "truncate") {
+    if (isTruncate) {
       cache.text += `
 
 [Truncated] The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
