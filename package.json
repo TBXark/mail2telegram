@@ -15,7 +15,7 @@
     "pub": "wrangler deploy",
     "build": "node esbuild.config.js",
     "lint": "eslint --fix src/index.ts src",
-    "test": "tsx src/mail/parse.test.ts"
+    "test": "tsx src/test.ts"
   },
   "license": "MIT",
   "dependencies": {
