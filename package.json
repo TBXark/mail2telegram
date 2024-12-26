@@ -14,7 +14,8 @@
     "dev": "wrangler dev",
     "pub": "wrangler deploy",
     "build": "node esbuild.config.js",
-    "lint": "eslint --fix src/index.ts src"
+    "lint": "eslint --fix src/index.ts src",
+    "test": "tsx src/mail/parse.test.ts"
   },
   "license": "MIT",
   "dependencies": {
@@ -32,7 +33,8 @@
     "eslint-plugin-format": "^0.1.3",
     "telegram-bot-api-types": "^8.1.0",
     "typescript": "^5.7.2",
-    "wrangler": "^3.99.0"
+    "wrangler": "^3.99.0",
+    "tsx": "^4.19.2"
   },
   "files": [
     "src/index.ts"

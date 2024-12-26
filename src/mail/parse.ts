@@ -1,28 +1,33 @@
-import type { ForwardableEmailMessage, ReadableStream } from '@cloudflare/workers-types';
+import type { ForwardableEmailMessage, ReadableStream, ReadableWritablePair } from '@cloudflare/workers-types';
+import type { RawEmail } from 'postal-mime';
 import type { EmailCache, MaxEmailSizePolicy } from '../types';
 import { convert } from 'html-to-text';
 import PostalMime from 'postal-mime';
 
-async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>, streamSize: number): Promise<Uint8Array> {
-    const result = new Uint8Array(streamSize);
-    const reader = stream.getReader();
+function truncateStream(stream: ReadableStream<Uint8Array>, maxBytes: number): ReadableStream<Uint8Array> {
     let bytesRead = 0;
-    try {
-        while (bytesRead < streamSize) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
+    const tran = new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
+            if (bytesRead >= maxBytes) {
+                controller.terminate();
+                return;
             }
-            result.set(value, bytesRead);
-            bytesRead += value.length;
-        }
-    } finally {
-        reader.releaseLock();
-    }
-    return result.slice(0, bytesRead);
+            const remainingBytes = maxBytes - bytesRead;
+            if (chunk.length <= remainingBytes) {
+                controller.enqueue(chunk);
+                bytesRead += chunk.length;
+            } else {
+                const limitedChunk = chunk.slice(0, remainingBytes);
+                controller.enqueue(limitedChunk);
+                bytesRead += remainingBytes;
+                controller.terminate();
+            }
+        },
+    }) as ReadableWritablePair<Uint8Array, Uint8Array>;
+    return stream.pipeThrough(tran);
 }
 
-export async function parseEmail(message: ForwardableEmailMessage, maxSize: number, maxSizePolicy: MaxEmailSizePolicy): Promise<EmailCache> {
+export async function parseEmail(message: ForwardableEmailMessage, maxSize: number, maxSizePolicy: MaxEmailSizePolicy, useEmlHeaders: boolean = false): Promise<EmailCache> {
     const id = crypto.randomUUID();
     const cache: EmailCache = {
         id,
@@ -32,27 +37,30 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
         subject: message.headers.get('Subject') || '',
     };
     let bufferSize = message.rawSize;
-    let currentMode = 'untruncate';
-    if (bufferSize > maxSize) {
-        switch (maxSizePolicy) {
+    let isTruncate = false;
+    let emailRaw = message.raw;
+    try {
+        switch (bufferSize > maxSize ? maxSizePolicy : 'continue') {
             case 'unhandled':
                 cache.text = `The original size of the email was ${bufferSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
                 cache.html = cache.text;
                 return cache;
             case 'truncate':
                 bufferSize = maxSize;
-                currentMode = 'truncate';
+                emailRaw = truncateStream(message.raw, maxSize);
+                isTruncate = true;
                 break;
             default:
                 break;
         }
-    }
-    try {
-        const raw = await streamToArrayBuffer(message.raw, bufferSize);
         const parser = new PostalMime();
-        const email = await parser.parse(raw);
-        // cache.messageId = email.messageId;
-        // cache.subject = email.subject;
+        const email = await parser.parse(emailRaw as RawEmail);
+        if (useEmlHeaders) {
+            cache.messageId = email.messageId;
+            cache.subject = email.subject || cache.subject;
+            cache.from = email.from.address || cache.from;
+            cache.to = email.to?.map(addr => addr.address).at(0) || cache.to;
+        }
         if (email.html) {
             cache.html = email.html;
         }
@@ -61,7 +69,7 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
         } else if (email.html) {
             cache.text = convert(email.html, {});
         }
-        if (currentMode === 'truncate') {
+        if (isTruncate) {
             cache.text += `\n\n[Truncated] The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;
         }
     } catch (e) {
