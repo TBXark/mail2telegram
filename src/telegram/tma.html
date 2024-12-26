@@ -2,292 +2,342 @@
 <html lang="zh">
 
 <head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>mail2telegram</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
-    <style>
-        body {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+  <meta charset="UTF-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>mail2telegram</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link href="https://unpkg.com/boltcss/bolt.min.css" rel="stylesheet">
+  <style>
+    body {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-        table {
-            width: 100%;
-        }
+    table {
+      width: 100%;
+    }
 
-        th,
-        td {
-            text-align: left;
-        }
+    th,
+    td {
+      text-align: left;
+    }
 
-        th:last-child,
-        td:last-child {
-            width: 80px;
-            text-align: center;
-        }
+    th:last-child,
+    td:last-child {
+      width: 80px;
+      text-align: center;
+    }
 
-        button {
-            padding: 5px 10px;
-            min-width: 80px;
-        }
+    button {
+      padding: 5px 10px;
+      min-width: 80px;
+    }
 
-        .growContainer {
-            display: flex;
-            align-items: center;
-        }
+    .growContainer {
+      display: flex;
+      align-items: center;
+    }
 
-        .growItem {
-            max-width: 100%;
-            flex-grow: 1;
-        }
-    </style>
+    .growItem {
+      max-width: 100%;
+      flex-grow: 1;
+    }
+  </style>
 </head>
 
 <body>
-<div id="app">
-    <h3 class="growContainer">
+  <div id="app">
+    <div v-if="func === 'list'">
+      <h3 class="growContainer">
         List Mode
         <select class="growItem" style="margin-left: 10px;" v-model="mode">
-            <option value="block">Block list</option>
-            <option value="white">White list</option>
-            <option value="test">Test address</option>
+          <option value="block">Block list</option>
+          <option value="white">White list</option>
+          <option value="test">Test address</option>
         </select>
-    </h3>
-    <p v-if="tipMessage">{{ tipMessage }}</p>
-    <table>
+      </h3>
+      <p v-if="tipMessage">{{ tipMessage }}</p>
+      <table>
         <thead>
-        <tr>
+          <tr>
             <th>address</th>
             <th>{{ mode === 'test' ? 'type' : 'action' }}</th>
-        </tr>
+          </tr>
         </thead>
         <tbody v-if="mode!=='test'">
-        <tr>
+          <tr>
             <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-                <button @click="addAddress">Add</button>
+              <button @click="addAddress">Add</button>
             </td>
-        </tr>
-        <tr :key="index" v-for="(address, index) in addresses">
+          </tr>
+          <tr :key="index" v-for="(address, index) in addresses">
             <td>{{ address }}</td>
             <td>
-                <button @click="removeAddress(index)">Delete</button>
+              <button @click="removeAddress(index)">Delete</button>
             </td>
-        </tr>
+          </tr>
         </tbody>
         <tbody v-else>
-        <tr>
+          <tr>
             <td class="growContainer">
-                <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
+              <input :placeholder="inputPlaceholder" class="growItem" v-model="inputAddress">
             </td>
             <td>
-                <button @click="testAddress">Test</button>
+              <button @click="testAddress">Test</button>
             </td>
-        </tr>
-        <tr :key="index" v-for="(item, index) in addresses">
+          </tr>
+          <tr :key="index" v-for="(item, index) in addresses">
             <td>{{ item.address }}</td>
             <td>{{ item.result }}</td>
-        </tr>
+          </tr>
         </tbody>
-    </table>
-</div>
+      </table>
+    </div>
+    <div v-if="func === 'sendmail'">
+      <h3>Send Mail</h3>
+      <p v-if="tipMessage">{{ tipMessage }}</p>
+      <table>
+        <tbody>
+          <tr>
+            <td style="width: 10px;">From</td>
+            <td>
+              <input v-model="sendMail.from" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>To</td>
+            <td>
+              <input v-model="sendMail.to" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>Subject</td>
+            <td>
+              <input v-model="sendMail.subject" class="growItem">
+            </td>
+          </tr>
+          <tr>
+            <td>Text</td>
+            <td>
+              <textarea v-model="sendMail.text" class="growItem"></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <button>Send</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<script>
-  const {createApp, computed, ref, onMounted, watch} = Vue;
+  <script>
+    const { createApp, computed, ref, onMounted, watch } = Vue;
 
 
-  class Client {
+    class Client {
 
-    constructor(tma) {
-      this.tma = tma;
-      this.addAddress = this.addAddress.bind(this);
-      this.removeAddress = this.removeAddress.bind(this);
-      this.loadAddress = this.loadAddress.bind(this);
-    }
-
-    async request(path, method, body) {
-      const res = await fetch(path, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `tma ${this.tma}`,
-        },
-        body: JSON.stringify(body),
-      }).then(response => response.json());
-      if (res.error) {
-        throw new Error(res.error);
+      constructor(tma) {
+        this.tma = tma;
+        this.addAddress = this.addAddress.bind(this);
+        this.removeAddress = this.removeAddress.bind(this);
+        this.loadAddress = this.loadAddress.bind(this);
       }
-      return res;
-    }
 
-    async addAddress(address, type) {
-      return this.request('/api/address/add', 'POST', {
-        address,
-        type,
-      });
-    }
-
-    async removeAddress(address, type) {
-      return this.request('/api/address/remove', 'POST', {
-        address,
-        type,
-      });
-    }
-
-    async loadAddress(tma) {
-      return this.request('/api/address/list', 'GET');
-    }
-  }
-
-  createApp({
-    setup() {
-
-      const urlParams = new URLSearchParams(window.location.search);
-
-      const blockList = ref([]);
-      const whiteList = ref([]);
-      const testList = ref([]);
-      const tipMessage = ref('');
-      const inputAddress = ref('');
-      const mode = ref(urlParams.get('mode') || 'block');
-      const client = new Client('');
-
-      const addresses = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return blockList.value;
-          case 'white':
-            return whiteList.value;
-          case 'test':
-            return testList.value;
+      async request(path, method, body) {
+        const res = await fetch(path, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `tma ${this.tma}`,
+          },
+          body: JSON.stringify(body),
+        }).then(response => response.json());
+        if (res.error) {
+          throw new Error(res.error);
         }
-      });
+        return res;
+      }
 
-      const inputPlaceholder = computed(() => {
-        switch (mode.value) {
-          case 'block':
-            return 'New block address regex';
-          case 'white':
-            return 'New white address regex';
-          case 'test':
-            return 'Test address';
-        }
-      });
+      async addAddress(address, type) {
+        return this.request('/api/address/add', 'POST', {
+          address,
+          type,
+        });
+      }
 
-      const addAddress = async () => {
-        try {
-          if (!inputAddress.value) {
-            return;
+      async removeAddress(address, type) {
+        return this.request('/api/address/remove', 'POST', {
+          address,
+          type,
+        });
+      }
+
+      async loadAddress(tma) {
+        return this.request('/api/address/list', 'GET');
+      }
+    }
+
+    createApp({
+      setup() {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const blockList = ref([]);
+        const whiteList = ref([]);
+        const testList = ref([]);
+        const tipMessage = ref('');
+        const inputAddress = ref('');
+
+        const sendMail = ref({
+          from: '',
+          to: '',
+          subject: '',
+          text: '',
+        })
+
+        const func = ref(urlParams.get('func') || 'list');
+        const mode = ref(urlParams.get('mode') || 'block');
+        const client = new Client('');
+
+        const addresses = computed(() => {
+          switch (mode.value) {
+            case 'block':
+              return blockList.value;
+            case 'white':
+              return whiteList.value;
+            case 'test':
+              return testList.value;
           }
+        });
+
+        const inputPlaceholder = computed(() => {
+          switch (mode.value) {
+            case 'block':
+              return 'New block address regex';
+            case 'white':
+              return 'New white address regex';
+            case 'test':
+              return 'Test address';
+          }
+        });
+
+        const addAddress = async () => {
+          try {
+            if (!inputAddress.value) {
+              return;
+            }
+            const address = inputAddress.value.trim();
+            await client.addAddress(address, mode.value);
+            inputAddress.value = '';
+            switch (mode.value) {
+              case 'block':
+                blockList.value.push(address);
+                break;
+              case 'white':
+                whiteList.value.push(address);
+                break;
+              case 'test':
+                break;
+            }
+            tipMessage.value = null;
+          } catch (error) {
+            tipMessage.value = `ERROR: ` + error;
+          }
+        };
+
+        const removeAddress = async (index) => {
+          try {
+            const address = addresses.value[index];
+            await client.removeAddress(address, mode.value);
+            switch (mode.value) {
+              case 'block':
+                blockList.value.splice(index, 1);
+                break;
+              case 'white':
+                whiteList.value.splice(index, 1);
+                break;
+              case 'test':
+                break;
+            }
+            tipMessage.value = null;
+          } catch (error) {
+            tipMessage.value = `ERROR: ` + error;
+          }
+        };
+
+        const testAddressWithPattern = (pattern, address) => {
+          if (pattern.toLowerCase() === address.toLowerCase()) {
+            return true;
+          }
+          try {
+            const regex = new RegExp(pattern, 'i');
+            return !!regex.test(address);
+          } catch (e) {
+            return false;
+          }
+        };
+
+        const testAddress = () => {
+          const test = [];
           const address = inputAddress.value.trim();
-          await client.addAddress(address, mode.value);
+          for (const pattern of blockList.value) {
+            if (testAddressWithPattern(pattern, address)) {
+              test.push({
+                address: pattern,
+                result: 'block',
+              });
+            }
+          }
+          for (const pattern of whiteList.value) {
+            if (testAddressWithPattern(pattern, address)) {
+              test.push({
+                address: pattern,
+                result: 'white',
+              });
+            }
+          }
+          testList.value = test;
+        };
+
+        watch(mode, () => {
           inputAddress.value = '';
-          switch (mode.value) {
-            case 'block':
-              blockList.value.push(address);
-              break;
-            case 'white':
-              whiteList.value.push(address);
-              break;
-            case 'test':
-              break;
+        });
+
+
+        onMounted(async () => {
+          try {
+            client.tma = window.Telegram.WebApp.initData;
+            const { block, white } = await client.loadAddress();
+            blockList.value = block;
+            whiteList.value = white;
+          } catch (error) {
+            tipMessage.value = `ERROR: ` + error.message;
           }
-          tipMessage.value = null;
-        } catch (error) {
-          tipMessage.value = `ERROR: ` + error;
-        }
-      };
+        });
 
-      const removeAddress = async (index) => {
-        try {
-          const address = addresses.value[index];
-          await client.removeAddress(address, mode.value);
-          switch (mode.value) {
-            case 'block':
-              blockList.value.splice(index, 1);
-              break;
-            case 'white':
-              whiteList.value.splice(index, 1);
-              break;
-            case 'test':
-              break;
-          }
-          tipMessage.value = null;
-        } catch (error) {
-          tipMessage.value = `ERROR: ` + error;
-        }
-      };
+        return {
+          addresses,
+          tipMessage,
+          inputAddress,
+          inputPlaceholder,
+          sendMail,
+          mode,
+          func,
+          addAddress,
+          removeAddress,
+          testAddress,
+        };
 
-      const testAddressWithPattern = (pattern, address) => {
-        if (pattern.toLowerCase() === address.toLowerCase()) {
-          return true;
-        }
-        try {
-          const regex = new RegExp(pattern, 'i');
-          return !!regex.test(address);
-        } catch (e) {
-          return false;
-        }
-      };
-
-      const testAddress = () => {
-        const test = [];
-        const address = inputAddress.value.trim();
-        for (const pattern of blockList.value) {
-          if (testAddressWithPattern(pattern, address)) {
-            test.push({
-              address: pattern,
-              result: 'block',
-            });
-          }
-        }
-        for (const pattern of whiteList.value) {
-          if (testAddressWithPattern(pattern, address)) {
-            test.push({
-              address: pattern,
-              result: 'white',
-            });
-          }
-        }
-        testList.value = test;
-      };
-
-      watch(mode, () => {
-        inputAddress.value = '';
-      });
-
-
-      onMounted(async () => {
-        try {
-          client.tma = window.Telegram.WebApp.initData;
-          const {block, white} = await client.loadAddress();
-          blockList.value = block;
-          whiteList.value = white;
-        } catch (error) {
-          tipMessage.value = `ERROR: ` + error.message;
-        }
-      });
-
-      return {
-        addresses,
-        tipMessage,
-        inputAddress,
-        inputPlaceholder,
-        mode,
-        addAddress,
-        removeAddress,
-        testAddress,
-      };
-
-    },
-  }).mount('#app');
-</script>
+      },
+    }).mount('#app');
+  </script>
 </body>
 
 </html>
