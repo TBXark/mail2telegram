@@ -45,8 +45,8 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
                 cache.html = cache.text;
                 return cache;
             case 'truncate':
-                emailRaw = truncateStream(message.raw, maxSize);
                 isTruncate = true;
+                emailRaw = truncateStream(message.raw, maxSize);
                 break;
             default:
                 break;

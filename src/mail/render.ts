@@ -17,14 +17,7 @@ export async function renderEmailListMode(mail: EmailCache, env: Environment): P
         OPENAI_API_KEY,
         DOMAIN,
     } = env;
-
-    const text = `
-${mail.subject}
-
------------
-From\t:\t${mail.from}
-To\t\t:\t${mail.to}
-  `;
+    const text = `${mail.subject}\n\n-----------\nFrom\t:\t${mail.from}\nTo\t\t:\t${mail.to}`;
     const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
     const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
     const keyboard = [
