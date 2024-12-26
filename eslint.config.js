@@ -18,7 +18,7 @@ const config = antfu(
             '.idea/**',
             '.vscode/**',
             '.wrangler/**',
-            'dist/**',
+            'build/**',
             'node_modules/**',
         ],
     },
