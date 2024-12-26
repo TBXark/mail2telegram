@@ -775,10 +775,7 @@ var APIClientBase = class {
   constructor(token2, baseURL) {
     this.token = token2;
     if (baseURL) {
-      this.baseURL = baseURL;
-    }
-    while (this.baseURL.endsWith("/")) {
-      this.baseURL = this.baseURL.slice(0, -1);
+      this.baseURL = baseURL.replace(/\/+$/, "");
     }
     this.request = this.request.bind(this);
     this.requestJSON = this.requestJSON.bind(this);
@@ -9520,8 +9517,8 @@ async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false
         cache.html = cache.text;
         return cache;
       case "truncate":
-        emailRaw = truncateStream(message.raw, maxSize);
         isTruncate = true;
+        emailRaw = truncateStream(message.raw, maxSize);
         break;
       default:
         break;
@@ -9594,13 +9591,11 @@ async function renderEmailListMode(mail, env) {
     OPENAI_API_KEY,
     DOMAIN
   } = env;
-  const text = `
-${mail.subject}
+  const text = `${mail.subject}
 
 -----------
 From	:	${mail.from}
-To		:	${mail.to}
-  `;
+To		:	${mail.to}`;
   const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
   const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
   const keyboard = [
