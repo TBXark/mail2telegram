@@ -9531,13 +9531,10 @@ async function parseEmail(message, maxSize, maxSizePolicy, useEmlHeaders = false
       cache.from = email.from.address || cache.from;
       cache.to = email.to?.map((addr) => addr.address).at(0) || cache.to;
     }
-    if (email.html) {
-      cache.html = email.html;
-    }
-    if (email.text) {
-      cache.text = email.text;
-    } else if (email.html) {
-      cache.text = convert(email.html, {});
+    cache.html = email.html;
+    cache.text = email.text;
+    if (cache.html && !cache.text) {
+      cache.text = convert(cache.html, {});
     }
     if (isTruncate) {
       cache.text += `
@@ -9596,26 +9593,28 @@ async function renderEmailListMode(mail, env) {
 -----------
 From	:	${mail.from}
 To		:	${mail.to}`;
-  const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
-  const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
   const keyboard = [
     {
       text: "Preview",
       callback_data: `p:${mail.id}`
-    },
-    {
-      text: "Text",
-      url: preview
-    },
-    {
-      text: "HTML",
-      url: fullHTML
     }
   ];
   if (OPENAI_API_KEY) {
-    keyboard.splice(1, 0, {
+    keyboard.push({
       text: "Summary",
       callback_data: `s:${mail.id}`
+    });
+  }
+  if (mail.text) {
+    keyboard.push({
+      text: "Text",
+      url: `https://${DOMAIN}/email/${mail.id}?mode=text`
+    });
+  }
+  if (mail.html) {
+    keyboard.push({
+      text: "HTML",
+      url: `https://${DOMAIN}/email/${mail.id}?mode=html`
     });
   }
   if (DEBUG === "true") {
@@ -9931,27 +9930,28 @@ function addressParamsCheck(address, type) {
   }
   return keyMap[type];
 }
+function errorHandler(error) {
+  if (error instanceof HTTPError) {
+    return new Response(JSON.stringify({
+      error: error.message
+    }), { status: error.status });
+  }
+  return new Response(JSON.stringify({
+    error: error.message
+  }), { status: 500 });
+}
 function createRouter(env) {
   const router = t({
-    catch: (e2) => {
-      if (e2 instanceof HTTPError) {
-        return new Response(JSON.stringify({
-          error: e2.message
-        }), { status: e2.status });
-      }
-      return new Response(JSON.stringify({
-        error: e2.message
-      }), { status: 500 });
-    },
+    catch: errorHandler,
     finally: [o]
   });
-  const auth = createTmaAuthMiddleware(env);
   const {
     TELEGRAM_TOKEN,
     DOMAIN,
     DB
   } = env;
   const dao = new Dao(DB);
+  const auth = createTmaAuthMiddleware(env);
   router.get("/", async () => {
     return new Response(null, {
       status: 302,

@@ -57,28 +57,30 @@ function addressParamsCheck(address: string, type: AddressType): AddressListStor
     return keyMap[type];
 }
 
+function errorHandler(error: Error): Response {
+    if (error instanceof HTTPError) {
+        return new Response(JSON.stringify({
+            error: error.message,
+        }), { status: error.status });
+    }
+    return new Response(JSON.stringify({
+        error: error.message,
+    }), { status: 500 });
+}
+
 function createRouter(env: Environment): RouterType {
     const router = Router({
-        catch: (e) => {
-            if (e instanceof HTTPError) {
-                return new Response(JSON.stringify({
-                    error: e.message,
-                }), { status: e.status });
-            }
-            return new Response(JSON.stringify({
-                error: e.message,
-            }), { status: 500 });
-        },
+        catch: errorHandler,
         finally: [json],
     });
 
-    const auth = createTmaAuthMiddleware(env);
     const {
         TELEGRAM_TOKEN,
         DOMAIN,
         DB,
     } = env;
     const dao = new Dao(DB);
+    const auth = createTmaAuthMiddleware(env);
 
     router.get('/', async (): Promise<Response> => {
         return new Response(null, {

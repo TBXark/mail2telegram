@@ -59,13 +59,10 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
             cache.from = email.from.address || cache.from;
             cache.to = email.to?.map(addr => addr.address).at(0) || cache.to;
         }
-        if (email.html) {
-            cache.html = email.html;
-        }
-        if (email.text) {
-            cache.text = email.text;
-        } else if (email.html) {
-            cache.text = convert(email.html, {});
+        cache.html = email.html;
+        cache.text = email.text;
+        if (cache.html && !cache.text) {
+            cache.text = convert(cache.html, {});
         }
         if (isTruncate) {
             cache.text += `\n\n[Truncated] The original size of the email was ${message.rawSize} bytes, which exceeds the maximum size of ${maxSize} bytes.`;

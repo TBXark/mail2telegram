@@ -18,27 +18,28 @@ export async function renderEmailListMode(mail: EmailCache, env: Environment): P
         DOMAIN,
     } = env;
     const text = `${mail.subject}\n\n-----------\nFrom\t:\t${mail.from}\nTo\t\t:\t${mail.to}`;
-    const preview = `https://${DOMAIN}/email/${mail.id}?mode=text`;
-    const fullHTML = `https://${DOMAIN}/email/${mail.id}?mode=html`;
-    const keyboard = [
+    const keyboard: Telegram.InlineKeyboardButton[] = [
         {
             text: 'Preview',
             callback_data: `p:${mail.id}`,
         },
-        {
-            text: 'Text',
-            url: preview,
-        },
-        {
-            text: 'HTML',
-            url: fullHTML,
-        },
     ];
-
     if (OPENAI_API_KEY) {
-        keyboard.splice(1, 0, {
+        keyboard.push({
             text: 'Summary',
             callback_data: `s:${mail.id}`,
+        });
+    }
+    if (mail.text) {
+        keyboard.push({
+            text: 'Text',
+            url: `https://${DOMAIN}/email/${mail.id}?mode=text`,
+        });
+    }
+    if (mail.html) {
+        keyboard.push({
+            text: 'HTML',
+            url: `https://${DOMAIN}/email/${mail.id}?mode=html`,
         });
     }
     if (DEBUG === 'true') {
