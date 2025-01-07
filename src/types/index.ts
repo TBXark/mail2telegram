@@ -17,6 +17,8 @@ export interface EmailCache {
 
 export type MaxEmailSizePolicy = 'unhandled' | 'continue' | 'truncate';
 
+export type BlockPolicy = 'reject' | 'forward' | 'telegram';
+
 export interface Environment {
     TELEGRAM_TOKEN: string;
     TELEGRAM_ID: string;

@@ -1,5 +1,5 @@
 import type { ForwardableEmailMessage } from '@cloudflare/workers-types';
-import type { EmailCache, Environment } from '../../types';
+import type { BlockPolicy, EmailCache, Environment } from '../../types';
 import { Dao } from '../../db';
 import { isMessageBlock, parseEmail, renderEmailListMode } from '../../mail';
 import { createTelegramBotAPI } from '../../telegram';
@@ -37,7 +37,7 @@ export async function emailHandler(message: ForwardableEmailMessage, env: Enviro
     const id = message.headers.get('Message-ID') || '';
     const isBlock = await isMessageBlock(message, env);
     const isGuardian = GUARDIAN_MODE === 'true';
-    const blockPolicy = (BLOCK_POLICY || 'telegram').split(',');
+    const blockPolicy: BlockPolicy[] = (BLOCK_POLICY || 'telegram').split(',') as BlockPolicy[];
     const statusTTL = 60 * 60;
     const status = await dao.loadMailStatus(id, isGuardian);
 
