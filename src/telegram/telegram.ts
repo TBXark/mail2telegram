@@ -39,7 +39,7 @@ function handleOpenTMACommand(mode: string, text: string | null, env: Environmen
                         },
                     ],
                 ],
-            },
+            };
         }
 
         return await createTelegramBotAPI(TELEGRAM_TOKEN).sendMessage(params);
