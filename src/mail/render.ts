@@ -1,7 +1,7 @@
 import type * as Telegram from 'telegram-bot-api-types';
 import type { EmailCache, Environment } from '../types';
 import { checkAddressStatus } from './check';
-import { sendOpenAIRequest } from './openai';
+import { summarizedByOpenAI, summarizedByWorkerAI } from './summarization';
 
 export interface EmailDetailParams {
     text: string;
@@ -15,6 +15,8 @@ export async function renderEmailListMode(mail: EmailCache, env: Environment): P
     const {
         DEBUG,
         OPENAI_API_KEY,
+        WORKERS_AI_MODEL,
+        AI,
         DOMAIN,
     } = env;
     const text = `${mail.subject}\n\n-----------\nFrom\t:\t${mail.from}\nTo\t\t:\t${mail.to}`;
@@ -24,7 +26,7 @@ export async function renderEmailListMode(mail: EmailCache, env: Environment): P
             callback_data: `p:${mail.id}`,
         },
     ];
-    if (OPENAI_API_KEY) {
+    if ((AI && WORKERS_AI_MODEL) || OPENAI_API_KEY) {
         keyboard.push({
             text: 'Summary',
             callback_data: `s:${mail.id}`,
@@ -88,18 +90,29 @@ export async function renderEmailPreviewMode(mail: EmailCache, env: Environment)
 }
 
 export async function renderEmailSummaryMode(mail: EmailCache, env: Environment): Promise<EmailDetailParams> {
-    let {
-        OPENAI_API_KEY: key,
-        OPENAI_COMPLETIONS_API: endpoint,
-        OPENAI_CHAT_MODEL: model,
-        SUMMARY_TARGET_LANG: targetLang,
+    const {
+        AI,
+        OPENAI_API_KEY,
+        WORKERS_AI_MODEL,
+        OPENAI_COMPLETIONS_API = 'https://api.openai.com/v1/chat/completions',
+        OPENAI_CHAT_MODEL = 'gpt-4o-mini',
+        SUMMARY_TARGET_LANG = 'english',
     } = env;
+
     const req = renderEmailDetail('', mail.id);
-    endpoint = endpoint || 'https://api.openai.com/v1/chat/completions';
-    model = model || 'gpt-4o-mini';
-    targetLang = targetLang || 'english';
-    const prompt = `Summarize the following text in approximately 50 words with ${targetLang}\n\n${mail.text}`;
-    req.text = await sendOpenAIRequest(key ?? '', endpoint, model, prompt);
+    const prompt = `Summarize the following text in approximately 50 words with ${SUMMARY_TARGET_LANG}\n\n${mail.text}`;
+
+    try {
+        if (AI && WORKERS_AI_MODEL) {
+            req.text = await summarizedByWorkerAI(AI, WORKERS_AI_MODEL, prompt);
+        } else if (OPENAI_API_KEY) {
+            req.text = await summarizedByOpenAI(OPENAI_API_KEY, OPENAI_COMPLETIONS_API, OPENAI_CHAT_MODEL, prompt);
+        } else {
+            req.text = 'Sorry, no summarization provider is configured.';
+        }
+    } catch (e) {
+        req.text = `Failed to summarize the email: ${(e as Error).message}`;
+    }
     return req;
 }
 

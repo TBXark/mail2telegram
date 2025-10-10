@@ -38,7 +38,7 @@ mail2telegram
     `git clone git@github.com:TBXark/mail2telegram.git`
 2. 复制配置模板，修改成自己的telegram配置 
 
-    `cp wrangler.example.toml wrangler.toml` 
+    `cp wrangler.example.jsonc wrangler.jsonc` 
 3. 部署 
 
     `yarn & yarn pub`
@@ -71,7 +71,8 @@ mail2telegram
 | ~~WHITE_LIST~~         | **即将废弃,改用内置小程序进行编辑**，发件人白名单，一个正则表达式或者邮箱地址数组转成字符串，例：`[\".*@10086\\\\.cn\"]`                                                                                            |
 | ~~BLOCK_LIST~~         | **即将废弃,改用内置小程序进行编辑**，发件人黑名单，一个正则表达式或者邮箱地址数组转成字符串                                                                                                                      |
 | MAIL_TTL               | 邮件缓存保存时间，单位秒, 默认为一天, 过期之后邮件将无法预览，请注意备份                                                                                                                                |
-| OPENAI_API_KEY         | OpenAI API Key, 用于邮件内容总结，如果不填写则不会出现`Summary`按钮                                                                                                                        |
+| WORKERS_AI_MODEL       | Workers AI 模型名称。绑定 `AI` 服务并设置此值后，邮件总结将优先使用 Workers AI。                                                                                                                     |
+| OPENAI_API_KEY         | OpenAI API Key，在未配置 Workers AI 时用于生成总结；若 `WORKERS_AI_MODEL` 与此变量都未配置则不会出现 `Summary` 按钮。                                                                                         |
 | OPENAI_COMPLETIONS_API | 可自定义API，默认值为 `https://api.openai.com/v1/chat/completions`                                                                                                             |
 | OPENAI_CHAT_MODEL      | 可自定义模型，默认值为 `gpt-4o-mini`                                                                                                                                             |
 | SUMMARY_TARGET_LANG    | 可自定义总结的语言，默认值为 `english`                                                                                                                                              |
@@ -111,7 +112,7 @@ To: [recipient]
 当邮件转发通知到Telegram的时候只有标题，发件人，收件人还有四个按钮。
 
 1. `Preview`模式: 可以在bot中直接预览纯文本模式的邮件，但是有4096个字符的限制。
-2. `Summary`模式: 当你配置了`OPENAI_API_KEY`就会出现`Summary`按钮，这样你可以对邮件进行内容总结。
+2. `Summary`模式: 绑定 Workers AI 并设置 `WORKERS_AI_MODEL` 后将由 Workers AI 生成总结；否则在配置 `OPENAI_API_KEY` 时使用 OpenAI。两者都未配置时不会显示 `Summary` 按钮。
 3. `TEXT`模式: 使用网页查看纯文本的邮件，可以阅读长度超过4096的邮件。
 4. `HTML`模式: 可以看到富文本的邮件，但是他其中可能包含某些脚本或者其他追踪链接。建议只有当你有需要的时候或者确认来源没有问题的时候才使用富文本模式。
 
@@ -134,4 +135,3 @@ To: [recipient]
 ## 许可证
 
 **mail2telegram** 以 MIT 许可证发布。[详见 LICENSE](../LICENSE) 获取详情。
-

@@ -54,9 +54,9 @@ export async function parseEmail(message: ForwardableEmailMessage, maxSize: numb
         const parser = new PostalMime();
         const email = await parser.parse(emailRaw as RawEmail);
         if (useEmlHeaders) {
-            cache.messageId = email.messageId;
+            cache.messageId = email.messageId || cache.messageId;
             cache.subject = email.subject || cache.subject;
-            cache.from = email.from.address || cache.from;
+            cache.from = email.from?.address || cache.from;
             cache.to = email.to?.map(addr => addr.address).at(0) || cache.to;
         }
         cache.html = email.html;

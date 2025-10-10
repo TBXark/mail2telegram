@@ -26,7 +26,7 @@ function handleOpenTMACommand(mode: string, text: string | null, env: Environmen
             chat_id: msg.chat.id,
             text: text || tmaModeDescription[mode] || 'Address Manager',
         };
-        
+
         if (msg.chat.type === 'private') {
             params.reply_markup = {
                 inline_keyboard: [
@@ -39,7 +39,7 @@ function handleOpenTMACommand(mode: string, text: string | null, env: Environmen
                         },
                     ],
                 ],
-            },
+            };
         }
 
         return await createTelegramBotAPI(TELEGRAM_TOKEN).sendMessage(params);

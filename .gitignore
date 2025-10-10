@@ -145,6 +145,7 @@ dist
 
 # build
 wrangler.toml
+wrangler.jsonc
 .idea
 .wrangler
 example

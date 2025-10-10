@@ -1,4 +1,4 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { Ai, KVNamespace } from '@cloudflare/workers-types';
 
 export interface EmailHandleStatus {
     telegram: boolean;
@@ -34,9 +34,11 @@ export interface Environment {
     OPENAI_API_KEY?: string;
     OPENAI_COMPLETIONS_API?: string;
     OPENAI_CHAT_MODEL?: string;
+    WORKERS_AI_MODEL?: string;
     SUMMARY_TARGET_LANG?: string;
     GUARDIAN_MODE?: string;
     RESEND_API_KEY?: string;
     DB: KVNamespace;
+    AI?: Ai;
     DEBUG?: string;
 }
